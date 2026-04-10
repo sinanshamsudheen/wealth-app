@@ -36,7 +36,7 @@ If there are no changes to commit AND no unpushed commits, inform the user: "Not
 5. **Stage changes:** `git add -A` (excluding any sensitive files identified above — use `git reset HEAD <file>` to unstage them if needed).
 
 6. **Generate commit message:** Analyze the full diff of all staged changes. Write a commit message:
-   - **First line:** Imperative mood, under 72 characters (e.g., "Add Celery retry logic for failed agent runs")
+   - **First line:** Imperative mood, under 72 characters (e.g., "Add agent detail page with run history view")
    - Use conventional commit prefixes where appropriate: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
    - **Body (if non-trivial):** Blank line, then bullet points explaining key changes.
    - If `$ARGUMENTS` was provided, use it as context for the message.
@@ -49,7 +49,7 @@ If there are no changes to commit AND no unpushed commits, inform the user: "Not
 
 ## Phase 2.5: Update Project Documentation
 
-9. **Invoke the `update-docs` skill** to analyze the committed changes and determine if any documentation in `DOCS/` needs updating.
+9. **Invoke the `update-docs` skill** to analyze the committed changes and determine if `CLAUDE.md` or `client/README.md` need updating.
 
    - The skill will diff `origin/dev..HEAD`, map changed files to documentation sections, and propose minimal targeted updates.
    - If documentation updates are needed, the skill will show proposed changes and ask for confirmation.
@@ -57,33 +57,37 @@ If there are no changes to commit AND no unpushed commits, inform the user: "Not
    - If no documentation is affected, it reports "No documentation updates needed" and continues.
 
    **Skip this phase if:**
-   - The only changes are in `DOCS/` itself (manual doc edits — avoid circular updates)
+   - The only changes are in `CLAUDE.md` or `client/README.md` themselves (avoid circular updates)
    - The only changes are in `changelog/` (changelog-only updates)
-   - The only changes are in `client/` (frontend POC — not part of core platform docs)
+   - The only changes are in `.claude/` (config changes)
    - The branch has no diff vs `origin/dev`
 
 ---
 
-## Phase 2.75: Run Tests
+## Phase 2.75: Run Quality Checks
 
-10. **Run the full test suite** to catch failures before pushing:
-
-```bash
-uv run pytest tests/ -v
-```
-
-- If **all tests pass** → continue to Phase 3.
-- If **any tests fail** → stop and fix the failures. Re-run until all tests pass. Do NOT proceed to push or PR creation with failing tests.
-- After fixing test failures, stage and commit the fixes (follow Phase 2 commit conventions), then re-run the test suite.
-
-**Also run code quality checks** (matching what CI runs):
+10. **Run linting and type checking** to catch issues before pushing:
 
 ```bash
-uv run ruff check .
-uv run mypy core/
+cd client && pnpm lint
 ```
 
-Fix any ruff or mypy errors before proceeding.
+```bash
+cd client && pnpm build
+```
+
+- The `build` command runs `tsc -b` (type checking) then `vite build`, catching both type errors and build issues.
+- If **all checks pass** → continue to Phase 3.
+- If **any check fails** → stop and fix the failures. Re-run until all pass. Do NOT proceed to push or PR creation with failing checks.
+- After fixing failures, stage and commit the fixes (follow Phase 2 commit conventions), then re-run checks.
+
+**If Vitest is configured** (check if `vitest` is in `client/package.json`):
+
+```bash
+cd client && pnpm exec vitest run
+```
+
+Fix any test failures before proceeding.
 
 ---
 
@@ -144,42 +148,11 @@ Analyze the diff (`git diff origin/dev..HEAD`) and all commit messages to genera
 - **Business section:** Non-technical stakeholders. Describe user-facing impact in plain language. Bold the feature/change title. Focus on "what this means for users" not "what code changed."
 
 - **Developer section:** Technical consumers. Include:
-  - **SSE Endpoint — Input Changes:** New/changed request fields or parameters. Write "No new fields." if none.
-  - **SSE Endpoint — Output Changes:** New/changed response fields. Write "No output changes." if none.
-  - **Internal / Non-Breaking Changes:** Internal refactoring, new utilities, architecture changes. Use bold titles for each change, descriptive paragraphs, and tables where structured data is involved (e.g., new enum values, config options).
+  - **UI Changes:** New or modified pages, components, layouts, interactions. Write "No UI changes." if none.
+  - **API / Integration Changes:** Changes to API clients, endpoint definitions, mock handlers, or LLM provider integrations. Write "No changes." if none.
+  - **Internal / Non-Breaking Changes:** Internal refactoring, new utilities, type changes, store updates. Use bold titles for each change, descriptive paragraphs, and tables where structured data is involved.
 
-Use this template:
-```markdown
-# Changelog — YYYY-MM-DD
-
-## Business
-
-- **Feature Title** — Plain-language description of user-facing impact.
-
----
-
-## Developer
-
-### SSE Endpoint — Input Changes
-
-No new fields.
-
----
-
-### SSE Endpoint — Output Changes
-
-No output changes.
-
----
-
-### Internal / Non-Breaking Changes
-
-**Change Title**
-
-Description of internal changes.
-
----
-```
+Use the template from the `git-workflow` skill.
 
 **If the file ALREADY exists — append to it:**
 

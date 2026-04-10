@@ -1,6 +1,6 @@
 ---
 description: Create a new feature branch from the latest dev branch
-argument-hint: "feature-name (e.g., auth-flow, celery-retry-logic)"
+argument-hint: "feature-name (e.g., chat-streaming, agent-detail-redesign)"
 ---
 
 You are executing the **start feature branch** workflow. The user wants to create a clean feature branch from the latest `dev`.
@@ -11,7 +11,7 @@ You are executing the **start feature branch** workflow. The user wants to creat
 
 ### 1. Validate Argument
 
-If `$ARGUMENTS` is empty or missing, ask the user for a feature name. Do not proceed without one. The feature name should be descriptive and kebab-case (e.g., `auth-flow`, `celery-retry-logic`).
+If `$ARGUMENTS` is empty or missing, ask the user for a feature name. Do not proceed without one. The feature name should be descriptive and kebab-case (e.g., `chat-streaming`, `portfolio-chart`, `agent-detail-redesign`).
 
 ### 2. Derive User Slug
 
@@ -77,9 +77,11 @@ git checkout -b feat-{user-slug}/{feature-name}
 ### 8. Confirm Success
 
 Print a clear summary:
-- Branch name created (e.g., `feat-raoof-naushad/auth-flow`)
+- Branch name created (e.g., `feat-raoof-naushad/chat-streaming`)
 - Based on commit: show `git log --oneline -1` (short hash + message)
-- Remind the user they can now start coding and use `/push-pr` when ready to create a PR.
+- Remind the user they can now start coding:
+  - `cd client && pnpm dev` to start the dev server
+  - Use `/push-pr` when ready to create a PR
 
 ## Edge Cases
 

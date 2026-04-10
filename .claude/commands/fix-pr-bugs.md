@@ -53,7 +53,6 @@ You are executing the **fix Bugbot findings** workflow. This fetches bug reports
 
 7. **Group and filter findings:**
    - Group by severity: High → Medium → Low
-   - Mark findings in `client/` as "SKIPPED (frontend POC)"
    - Mark already-fixed findings as "ALREADY FIXED"
 
 8. **Present summary to user:**
@@ -70,15 +69,12 @@ You are executing the **fix Bugbot findings** workflow. This fetches bug reports
    LOW:
      4. [file] Title
 
-   SKIPPED (client/):
-     - [file] Title
-
    ALREADY FIXED:
      - [file:line] Title ← code has changed since Bugbot reviewed
    ```
 
 9. **Determine which issues to fix:**
-   - If `$ARGUMENTS` is `all` → fix all non-skipped, non-fixed issues
+   - If `$ARGUMENTS` is `all` → fix all non-fixed issues
    - If `$ARGUMENTS` is `high`, `medium`, or `low` → fix only that severity level
    - If `$ARGUMENTS` is comma-separated numbers (e.g., `1,3,5`) → fix those specific issues
    - If `$ARGUMENTS` is empty → ask the user: "Fix all? Fix by severity (high/medium/low)? Pick specific numbers? Or skip?"
@@ -96,13 +92,17 @@ You are executing the **fix Bugbot findings** workflow. This fetches bug reports
 
 11. **After all fixes, run the full quality gate:**
     ```bash
-    uv run ruff check .
-    uv run mypy core/
-    uv run pytest tests/ -v
+    cd client && pnpm lint
+    cd client && pnpm build
     ```
-    - If ruff or mypy fails → fix the issue, re-run
+    - If lint or build fails → fix the issue, re-run
+    - Do NOT proceed until both pass
+
+    **If Vitest is configured** (check `client/package.json`):
+    ```bash
+    cd client && pnpm exec vitest run
+    ```
     - If tests fail → diagnose and fix, re-run
-    - Do NOT proceed until all three pass
 
 ---
 
@@ -127,7 +127,7 @@ You are executing the **fix Bugbot findings** workflow. This fetches bug reports
 15. **Print final summary:**
     - Number of issues fixed
     - Files modified
-    - Test results (all passing)
+    - Quality check results (all passing)
     - PR URL
 
 ---
@@ -139,8 +139,7 @@ You are executing the **fix Bugbot findings** workflow. This fetches bug reports
 | No open PR for this branch | Stop with message, suggest creating a PR first |
 | No Bugbot comments found | Stop — Bugbot may not have run yet |
 | All findings already fixed | Report "All Bugbot findings appear to be already addressed" and stop |
-| Finding in `client/` directory | Skip by default (frontend POC), note as skipped |
-| Fix introduces a test failure | Fix the regression before proceeding |
+| Fix introduces a build failure | Fix the regression before proceeding |
 | Finding is a false positive | Skip it — note to user that they can dismiss it on GitHub |
 | Multiple findings in same file | Fix all findings in the file together to avoid conflicts |
 | Bugbot comment references deleted file | Skip with note "file no longer exists" |
