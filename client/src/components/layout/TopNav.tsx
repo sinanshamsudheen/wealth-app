@@ -27,32 +27,30 @@ export function TopNav({ onModuleSwitcherOpen }: TopNavProps) {
 
   function getBreadcrumbs() {
     const crumbs = [
-      { label: 'Home', path: '/' },
-      { label: 'Invictus AI', path: '/insights' },
+      { label: 'Home', path: '/home' },
     ]
 
-    const insightsPath = location.pathname.replace(/^\/insights\/?/, '')
-    const parts = insightsPath.split('/').filter(Boolean)
+    const homePath = location.pathname.replace(/^\/home\/?/, '')
+    const parts = homePath.split('/').filter(Boolean)
 
     if (parts[0] === 'dashboard') {
-      crumbs.push({ label: 'Dashboard', path: '/insights/dashboard' })
+      crumbs.push({ label: 'Your Daily', path: '/home/dashboard' })
     } else if (parts[0] === 'meetings') {
-      crumbs.push({ label: 'Home', path: '/insights' })
       crumbs.push({ label: 'Meeting Brief', path: location.pathname })
     } else if (parts[0] === 'agents') {
-      crumbs.push({ label: 'Agents', path: '/insights/agents' })
+      crumbs.push({ label: 'Agents', path: '/home/agents' })
       if (parts[1]) {
         const name = parts[1].replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-        crumbs.push({ label: name, path: `/insights/agents/${parts[1]}` })
+        crumbs.push({ label: name, path: `/home/agents/${parts[1]}` })
         if (parts[2] === 'trigger') {
           crumbs.push({ label: 'Trigger', path: location.pathname })
         }
       }
+    } else if (parts[0] === 'chat') {
+      crumbs.push({ label: 'Chat', path: '/home/chat' })
     } else if (parts[0] === 'runs') {
-      crumbs.push({ label: 'Runs', path: '/insights/runs' })
+      crumbs.push({ label: 'Runs', path: '/home/runs' })
       if (parts[1]) crumbs.push({ label: parts[1], path: location.pathname })
-    } else if (insightsPath === '') {
-      crumbs.push({ label: 'Home', path: '/insights' })
     }
 
     return crumbs
@@ -63,7 +61,7 @@ export function TopNav({ onModuleSwitcherOpen }: TopNavProps) {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
           <InvictusLogo size="sm" />
         </div>
         <div className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground ml-2">

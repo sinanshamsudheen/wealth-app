@@ -4,7 +4,6 @@ import {
   Home,
   LayoutDashboard,
   Bot,
-  History,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -13,16 +12,24 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
+
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
 }
 
-const NAV_ITEMS = [
-  { icon: Home, label: 'Home', path: '/insights' },
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/insights/dashboard' },
-  { icon: Bot, label: 'Agents', path: '/insights/agents' },
-  { icon: History, label: 'Runs', path: '/insights/runs' },
+interface NavItem {
+  icon?: typeof Home
+  customIcon?: React.ReactNode
+  label: string
+  path: string
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { icon: Home, label: 'Home', path: '/home' },
+  { icon: LayoutDashboard, label: 'Your Daily', path: '/home/dashboard' },
+  { customIcon: <img src="/invictus-logo.svg" alt="" className="h-4.5 w-4.5 dark:invert" />, label: 'Chat', path: '/home/chat' },
+  { icon: Bot, label: 'Agents', path: '/home/agents' },
   { icon: Settings, label: 'Settings', path: '#' },
 ]
 
@@ -50,7 +57,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               onMouseEnter={() => setHoveredItem(item.label)}
               onMouseLeave={() => setHoveredItem(null)}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              {item.customIcon ? (
+                <span className="h-4 w-4 shrink-0 flex items-center justify-center">{item.customIcon}</span>
+              ) : Icon ? (
+                <Icon className="h-4 w-4 shrink-0" />
+              ) : null}
               {!collapsed && <span className="truncate">{item.label}</span>}
             </div>
           )
@@ -59,7 +70,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <NavLink
               key={item.label}
               to={item.path}
-              end={item.path === '/insights'}
+              end={item.path === '/home'}
               className={({ isActive }) =>
                 cn(isActive && item.path !== '#' && '[&>div]:bg-sidebar-accent [&>div]:text-sidebar-accent-foreground [&>div]:font-medium')
               }
@@ -73,7 +84,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <TooltipTrigger className="w-full text-left">
                 <NavLink
                   to={item.path}
-                  end={item.path === '/insights'}
+                  end={item.path === '/home'}
                   className={({ isActive }) =>
                     cn(isActive && item.path !== '#' && '[&>div]:bg-sidebar-accent [&>div]:text-sidebar-accent-foreground [&>div]:font-medium')
                   }

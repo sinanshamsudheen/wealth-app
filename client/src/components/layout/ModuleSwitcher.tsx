@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { useNavigate } from 'react-router-dom'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Home,
@@ -26,13 +27,13 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 }
 
 const MODULES = [
-  { name: 'Home', icon: 'Home', active: false },
-  { name: 'Invictus Engage', icon: 'Handshake', active: false },
-  { name: 'Invictus Plan', icon: 'ClipboardList', active: false },
-  { name: 'Invictus Tools &\nCommunication', icon: 'Flag', active: false },
-  { name: 'Invictus Deals', icon: 'TrendingUp', active: false },
-  { name: 'Invictus AI', icon: 'Lightbulb', active: true },
-  { name: 'Invictus\nAdministration', icon: 'Users', active: false },
+  { name: 'Home', icon: 'Home', active: false, path: '/home' },
+  { name: 'Invictus Engage', icon: 'Handshake', active: false, path: null },
+  { name: 'Invictus Plan', icon: 'ClipboardList', active: false, path: null },
+  { name: 'Invictus Tools &\nCommunication', icon: 'Flag', active: false, path: null },
+  { name: 'Invictus Deals', icon: 'TrendingUp', active: false, path: null },
+  { name: 'Invictus AI', icon: 'Lightbulb', active: true, path: '/home/dashboard' },
+  { name: 'Invictus\nAdministration', icon: 'Users', active: false, path: null },
 ]
 
 interface ModuleSwitcherProps {
@@ -41,6 +42,8 @@ interface ModuleSwitcherProps {
 }
 
 export function ModuleSwitcher({ open, onClose }: ModuleSwitcherProps) {
+  const navigate = useNavigate()
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
@@ -54,13 +57,17 @@ export function ModuleSwitcher({ open, onClose }: ModuleSwitcherProps) {
               <button
                 key={mod.name}
                 onClick={() => {
-                  if (mod.active) onClose()
+                  if (mod.path) {
+                    navigate(mod.path)
+                    onClose()
+                  }
                 }}
                 className={cn(
                   'flex flex-col items-center gap-2 p-4 rounded-lg border transition-all text-center',
                   mod.active
                     ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
-                    : 'border-border hover:bg-accent hover:border-accent-foreground/20 text-muted-foreground'
+                    : 'border-border hover:bg-accent hover:border-accent-foreground/20 text-muted-foreground',
+                  !mod.path && !mod.active && 'opacity-60 cursor-not-allowed'
                 )}
               >
                 {Icon && <Icon className="h-7 w-7" />}

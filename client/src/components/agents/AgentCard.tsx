@@ -32,7 +32,7 @@ export function AgentCard({ agent, lastRun }: AgentCardProps) {
   return (
     <Card
       className="group cursor-pointer hover:shadow-md transition-all hover:border-primary/30"
-      onClick={() => navigate(`/insights/agents/${agent.workflow}`)}
+      onClick={() => navigate(`/home/agents/${agent.workflow}`)}
     >
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
@@ -69,7 +69,7 @@ export function AgentCard({ agent, lastRun }: AgentCardProps) {
             className="h-7 text-xs gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={(e) => {
               e.stopPropagation()
-              navigate(`/insights/agents/${agent.workflow}/trigger`)
+              navigate(`/home/agents/${agent.workflow}/trigger`)
             }}
           >
             <Play className="h-3 w-3" /> Run

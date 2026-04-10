@@ -63,7 +63,7 @@ export function TriggerPage() {
         input: processedInput,
         llm_config: { provider, model },
       })
-      navigate(`/insights/runs/${result.run_id}`)
+      navigate(`/home/runs/${result.run_id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to trigger run')
     } finally {
@@ -72,7 +72,7 @@ export function TriggerPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-2xl">
+    <div className="p-6 space-y-6 max-w-3xl">
       <div>
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 gap-1 text-xs">
           <ArrowLeft className="h-3 w-3" /> Back
