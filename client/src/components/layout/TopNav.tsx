@@ -1,4 +1,4 @@
-import { Sun, Moon, Grid3X3, LogOut, ChevronRight } from 'lucide-react'
+import { Sun, Moon, Grid3X3, LogOut, ChevronRight, User } from 'lucide-react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useChatStore } from '@/store/useChatStore'
@@ -51,6 +51,15 @@ export function TopNav({ onModuleSwitcherOpen }: TopNavProps) {
     } else if (parts[0] === 'runs') {
       crumbs.push({ label: 'Runs', path: '/home/runs' })
       if (parts[1]) crumbs.push({ label: parts[1], path: location.pathname })
+    } else if (parts[0] === 'admin') {
+      crumbs.push({ label: 'Administration', path: '/home/admin' })
+      if (parts[1] === 'company') crumbs.push({ label: 'Company Profile', path: '/home/admin/company' })
+      else if (parts[1] === 'branding') crumbs.push({ label: 'Branding', path: '/home/admin/branding' })
+      else if (parts[1] === 'users') crumbs.push({ label: 'Roles & Access', path: '/home/admin/users' })
+      else if (parts[1] === 'preferences') crumbs.push({ label: 'Preferences', path: '/home/admin/preferences' })
+    } else if (parts[0] === 'account') {
+      crumbs.push({ label: 'My Account', path: '/home/account' })
+      if (parts[1] === 'security') crumbs.push({ label: 'Security', path: '/home/account/security' })
     }
 
     return crumbs
@@ -110,6 +119,10 @@ export function TopNav({ onModuleSwitcherOpen }: TopNavProps) {
               <p className="text-muted-foreground text-xs">{user?.email}</p>
             </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/home/account')}>
+              <User className="mr-2 h-4 w-4" />
+              My Account
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" />
               Logout
