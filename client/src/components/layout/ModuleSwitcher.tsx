@@ -30,9 +30,9 @@ const MODULES = [
   { name: 'Home', icon: 'Home', active: false, path: '/home' },
   { name: 'Invictus Engage', icon: 'Handshake', active: false, path: null },
   { name: 'Invictus Plan', icon: 'ClipboardList', active: false, path: null },
-  { name: 'Invictus Tools &\nCommunication', icon: 'Flag', active: false, path: null },
+  { name: 'Invictus\nCommunication', icon: 'Flag', active: false, path: null },
   { name: 'Invictus Deals', icon: 'TrendingUp', active: false, path: null },
-  { name: 'Invictus AI', icon: 'Lightbulb', active: true, path: '/home/dashboard' },
+  { name: 'Invictus Insights', icon: 'Lightbulb', active: true, path: '/home/dashboard' },
   { name: 'Invictus\nAdministration', icon: 'Users', active: false, path: '/home/admin' },
 ]
 

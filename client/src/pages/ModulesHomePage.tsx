@@ -84,7 +84,7 @@ const MODULES: ModuleConfig[] = [
     badgeBg: 'bg-blue-500',
   },
   {
-    name: 'Invictus Tools & Communication',
+    name: 'Invictus Communication',
     subtitle: 'Manage your To-dos and Communication',
     icon: Flag,
     path: null,
@@ -120,8 +120,8 @@ const MODULES: ModuleConfig[] = [
     name: 'Invictus Administration',
     subtitle: 'Manage your Settings',
     icon: Users,
-    path: null,
-    badge: 5,
+    path: '/home/admin',
+    badge: null,
     color: 'text-slate-600 dark:text-slate-400',
     colorBg: 'bg-slate-100 dark:bg-slate-800/40',
     colorBorder: 'hover:border-slate-400/60 dark:hover:border-slate-500/40',
@@ -132,7 +132,7 @@ const MODULES: ModuleConfig[] = [
 const MODULE_DETAILS: Record<string, string> = {
   'Invictus Engage': 'Track prospects, manage client relationships, and monitor engagement pipelines with powerful CRM tools.',
   'Invictus Plan': 'Create, customize, and present personalized financial plans tailored to each client\'s goals and risk profile.',
-  'Invictus Tools & Communication': 'Centralize task management, schedule meetings, and streamline client communications in one place.',
+  'Invictus Communication': 'Centralize task management, schedule meetings, and streamline client communications in one place.',
   'Invictus Deals': 'Analyze investment opportunities, track deal flow, and manage portfolio allocations efficiently.',
   'Invictus Insights': 'Access client data, reports, and analytics to make informed decisions and deliver personalized insights.',
   'Invictus Administration': 'Configure team permissions, manage system settings, and customize your workspace.',

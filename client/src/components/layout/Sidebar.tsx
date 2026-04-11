@@ -42,11 +42,11 @@ const GLOBAL_NAV: NavItem[] = [
 ]
 
 const MODULE_ITEMS: NavItem[] = [
-  { icon: TrendingUp, label: 'Deals', path: '/home/deals' },
   { icon: Handshake, label: 'Engage', path: '/home/engage' },
   { icon: ClipboardList, label: 'Plan', path: '/home/plan' },
+  { icon: Flag, label: 'Communication', path: '/home/tools' },
+  { icon: TrendingUp, label: 'Deals', path: '/home/deals' },
   { icon: BarChart3, label: 'Insights', path: '/home/insights' },
-  { icon: Flag, label: 'Tools', path: '/home/tools' },
 ]
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
