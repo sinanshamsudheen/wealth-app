@@ -74,7 +74,6 @@ async def login(body: LoginRequest, request: Request, response: Response, db: As
 async def refresh(
     request: Request,
     response: Response,
-    refresh_token: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
     # Read refresh token from cookie

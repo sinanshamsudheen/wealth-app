@@ -12,11 +12,17 @@ from app.tasks.celery_app import celery_app
 
 logger = structlog.get_logger()
 
+# Lazy-initialized engine (one per worker process)
+_engine = None
+_session_factory = None
+
 
 def _get_session_factory():
-    """Create a fresh async session factory for the Celery worker."""
-    engine = create_async_engine(settings.DATABASE_URL, pool_size=5)
-    return async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    global _engine, _session_factory
+    if _session_factory is None:
+        _engine = create_async_engine(settings.DATABASE_URL, pool_size=5)
+        _session_factory = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
+    return _session_factory
 
 
 @celery_app.task(name="app.tasks.audit.write_audit_log")

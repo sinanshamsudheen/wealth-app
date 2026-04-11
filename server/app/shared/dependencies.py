@@ -80,5 +80,7 @@ async def get_db_with_tenant(
     """
     tenant_id = getattr(request.state, "tenant_id", None)
     if tenant_id:
-        await session.execute(text(f"SET LOCAL app.current_tenant = '{tenant_id}'"))
+        # tenant_id comes from JWT decode as str(uuid.UUID), re-parse to guarantee format
+        validated_tid = str(uuid.UUID(tenant_id))
+        await session.execute(text(f"SET LOCAL app.current_tenant = '{validated_tid}'"))
     return session

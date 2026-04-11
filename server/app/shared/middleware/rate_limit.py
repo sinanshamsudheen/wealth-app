@@ -44,13 +44,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             request_count = results[2]
 
-            response = await call_next(request)
-            response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
-            response.headers["X-RateLimit-Remaining"] = str(
-                max(0, self.requests_per_minute - request_count)
-            )
-            response.headers["X-RateLimit-Reset"] = str(int(now + 60))
-
+            # Check BEFORE processing the request
             if request_count > self.requests_per_minute:
                 return JSONResponse(
                     status_code=429,
@@ -63,8 +57,19 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                         },
                         "meta": {"request_id": getattr(request.state, "request_id", None)},
                     },
+                    headers={
+                        "X-RateLimit-Limit": str(self.requests_per_minute),
+                        "X-RateLimit-Remaining": "0",
+                        "X-RateLimit-Reset": str(int(now + 60)),
+                    },
                 )
 
+            response = await call_next(request)
+            response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
+            response.headers["X-RateLimit-Remaining"] = str(
+                max(0, self.requests_per_minute - request_count)
+            )
+            response.headers["X-RateLimit-Reset"] = str(int(now + 60))
             return response
         except Exception:
             # If Redis is down, allow the request through
