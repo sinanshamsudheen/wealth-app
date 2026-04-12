@@ -16,16 +16,16 @@ export function LoginPage() {
   const { login } = useAuthStore()
   const navigate = useNavigate()
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email || !password) {
       setError('Please enter your credentials')
       return
     }
-    const success = login(email, password)
-    if (success) {
+    try {
+      await login(email, password)
       navigate('/', { replace: true })
-    } else {
+    } catch {
       setError('Invalid credentials')
     }
   }
