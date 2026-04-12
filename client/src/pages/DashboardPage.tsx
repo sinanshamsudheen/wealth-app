@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { Clock, CheckCircle2, Loader, Newspaper, Heart } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useChatStore } from '@/store/useChatStore'
@@ -78,7 +78,7 @@ export function DashboardPage() {
       {/* Header */}
       <div>
         <p className="text-sm text-muted-foreground mb-1">
-          {format(new Date(), "EEEE, do MMMM")}
+          {format(addDays(new Date(), 1), "EEEE, do MMMM")}
         </p>
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">

@@ -1,6 +1,14 @@
-# Invictus AI Copilot — Frontend
+# Invictus AI — Wealth Management Platform
 
-Wealth management frontend SPA for the Invictus AI Copilot platform. This repo contains **only the frontend client** — no backend, no database, no server code.
+AI-native wealth management platform with 6 modules: **Engage** (CRM), **Plan** (financial planning), **Tools & Communication**, **Deals** (deal sourcing), **Insights** (reporting), and **Administration** (auth/RBAC). Each module can be used standalone or as part of the full suite. Administration is the shared backbone for auth and permissions across all modules.
+
+## Architecture Documentation
+
+Full-stack architecture docs live in `architecture/` at the repo root. **Always consult these when building features** — they define module boundaries, API conventions, database schemas, RBAC patterns, and cross-module integration rules. See [architecture/README.md](architecture/README.md) for the table of contents.
+
+## Current State
+
+Currently this repo contains **only the frontend client** (`client/`). Backend and database are planned — see `architecture/04-backend-architecture.md` and `architecture/05-database-architecture.md` for the target design.
 
 ## Tech Stack
 
@@ -36,10 +44,6 @@ client/src/
 │   ├── client.ts       # Fetch wrapper with auth token injection
 │   ├── endpoints.ts    # API route definitions
 │   ├── types.ts        # TypeScript interfaces for API data
-│   ├── anthropic.ts    # Anthropic Claude API integration
-│   ├── azure-openai.ts # Azure OpenAI integration
-│   ├── openrouter.ts   # OpenRouter multi-model routing
-│   ├── tavily.ts       # Tavily web search API
 │   └── mock/           # MSW handlers and mock data
 ├── hooks/              # Custom hooks (usePolling, useRunStatus)
 ├── lib/                # Utilities (cn() helper, constants)
@@ -88,8 +92,8 @@ pnpm dlx shadcn@latest add <component-name>
 
 ## Important Notes
 
-- **No backend in this repo.** All API interactions are mocked via MSW at `src/api/mock/`. The MSW worker starts before the app mounts (see `src/main.tsx`).
-- **Multi-LLM routing:** The chat store routes to Anthropic (default), Azure OpenAI (`azure:` prefix), or OpenRouter (`openrouter:` prefix) based on model name.
+- **No backend in this repo yet.** All API interactions are mocked via MSW at `src/api/mock/`. The MSW worker starts before the app mounts (see `src/main.tsx`).
+- **AI is an external service.** The frontend does NOT call LLM providers directly. Chat and agent features call backend API endpoints (`/api/v1/platform/chat/*`, `/api/v1/platform/agents/*`) which proxy to an external AI service. No LLM API keys in the frontend. Legacy files (`anthropic.ts`, `azure-openai.ts`, `openrouter.ts`, `tavily.ts`) in `src/api/` are from early prototyping and will be removed.
 - **No test framework installed yet.** When adding tests, use Vitest + React Testing Library.
 - **No CI/CD pipeline** exists yet.
 - **No Docker** — this is a pure frontend project.
