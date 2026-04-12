@@ -13,12 +13,13 @@ import {
   SlidersHorizontal,
   Kanban,
   Target,
-  PieChart,
   UserPlus,
   FileText,
   Bell,
   CheckSquare,
   Calendar,
+  Mail,
+  Newspaper,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -56,10 +57,12 @@ const MODULE_NAV_CONFIG: Record<string, ActiveModule> = {
     accentColor: 'text-amber-500',
     navItems: [
       { label: 'Dashboard', path: '/home/deals', icon: LayoutDashboard },
-      { label: 'Pipeline', path: '/home/deals/pipeline', icon: Kanban },
+      { label: 'Mandates', path: '/home/deals/mandates', icon: FileText },
       { label: 'Opportunities', path: '/home/deals/opportunities', icon: Target },
-      { label: 'Allocations', path: '/home/deals/allocations', icon: PieChart },
-      { label: 'Reports', path: '/home/deals/reports', icon: FileText },
+      { label: 'Email Hub', path: '/home/deals/email', icon: Mail },
+      { label: 'Asset Managers', path: '/home/deals/asset-managers', icon: Building2 },
+      { label: 'News', path: '/home/deals/news', icon: Newspaper },
+      { label: 'Settings', path: '/home/deals/settings', icon: Settings },
     ],
   },
   engage: {

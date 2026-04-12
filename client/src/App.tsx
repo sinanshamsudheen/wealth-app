@@ -14,6 +14,10 @@ import { ChatPage } from '@/pages/ChatPage'
 
 // Administration module
 import { AdminLayout } from '@/modules/admin/pages/AdminLayout'
+
+// Deals module
+import { DealsLayout } from '@/modules/deals/pages/DealsLayout'
+import { DealsDashboardPage } from '@/modules/deals/pages/DashboardPage'
 import { CompanyProfilePage } from '@/modules/admin/pages/CompanyProfilePage'
 import { BrandingPage } from '@/modules/admin/pages/BrandingPage'
 import { UsersPage } from '@/modules/admin/pages/UsersPage'
@@ -74,6 +78,11 @@ function App() {
             <Route path="branding" element={<BrandingPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="preferences" element={<PreferencesPage />} />
+          </Route>
+
+          {/* Deals module */}
+          <Route path="deals" element={<DealsLayout />}>
+            <Route index element={<DealsDashboardPage />} />
           </Route>
 
           {/* My Account */}

@@ -98,7 +98,7 @@ const MODULES: ModuleConfig[] = [
     name: 'Invictus Deals',
     subtitle: 'Manage your Investment',
     icon: TrendingUp,
-    path: null,
+    path: '/home/deals',
     badge: 5,
     color: 'text-amber-600 dark:text-amber-400',
     colorBg: 'bg-amber-50 dark:bg-amber-900/30',
