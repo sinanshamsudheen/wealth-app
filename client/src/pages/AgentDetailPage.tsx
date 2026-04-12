@@ -49,7 +49,7 @@ export function AgentDetailPage() {
           icon={AlertTriangle}
           title="Agent not found"
           description={`No agent found with workflow "${workflow}"`}
-          action={<Button variant="outline" size="sm" onClick={() => navigate('/insights/agents')}>Back to Agents</Button>}
+          action={<Button variant="outline" size="sm" onClick={() => navigate('/home/agents')}>Back to Agents</Button>}
         />
       </div>
     )
@@ -62,10 +62,10 @@ export function AgentDetailPage() {
   const Icon = ICON_MAP[agent.icon] || FileText
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/insights/agents')} className="mb-3 -ml-2 gap-1 text-xs">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/home/agents')} className="mb-3 -ml-2 gap-1 text-xs">
           <ArrowLeft className="h-3 w-3" /> Back to Agents
         </Button>
         <div className="flex items-start justify-between">
@@ -85,7 +85,7 @@ export function AgentDetailPage() {
               </div>
             </div>
           </div>
-          <Button size="sm" onClick={() => navigate(`/insights/agents/${workflow}/trigger`)} className="gap-1.5">
+          <Button size="sm" onClick={() => navigate(`/home/agents/${workflow}/trigger`)} className="gap-1.5">
             <Play className="h-3.5 w-3.5" /> Trigger Run
           </Button>
         </div>
@@ -136,7 +136,7 @@ export function AgentDetailPage() {
               title="No runs yet"
               description="Trigger your first run to see results here."
               action={
-                <Button size="sm" onClick={() => navigate(`/insights/agents/${workflow}/trigger`)} className="gap-1">
+                <Button size="sm" onClick={() => navigate(`/home/agents/${workflow}/trigger`)} className="gap-1">
                   <Play className="h-3 w-3" /> Trigger Run
                 </Button>
               }

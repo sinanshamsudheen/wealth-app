@@ -345,7 +345,7 @@ export function MeetingBriefPage() {
     <div className="p-6">
       {/* Back link */}
       <Link
-        to="/insights"
+        to="/home"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
       >
         <ArrowLeft className="h-3.5 w-3.5" />

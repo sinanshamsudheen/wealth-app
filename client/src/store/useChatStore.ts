@@ -317,25 +317,44 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
           const aiResponse = await callLLM(history, systemPrompt, model)
 
-          // Update assistant message with real response
-          set((s) => ({
-            messages: s.messages.map((m) =>
+          // Update assistant message with real response and auto-save thread
+          set((s) => {
+            const updatedMessages = s.messages.map((m) =>
               m.id === assistantMsgId ? { ...m, content: aiResponse } : m
-            ),
-            isLoading: false,
-          }))
+            )
+            // Auto-save to history so sidebar stays current
+            let updatedHistory = s.history
+            if (s.activeThreadId) {
+              updatedHistory = s.history.map((t) =>
+                t.id === s.activeThreadId
+                  ? { ...t, messages: [...updatedMessages], title: deriveTitle(updatedMessages) }
+                  : t
+              )
+            } else {
+              const newThreadId = `thread-${Date.now()}`
+              const thread: ChatThread = {
+                id: newThreadId,
+                title: deriveTitle(updatedMessages),
+                messages: [...updatedMessages],
+                createdAt: new Date().toISOString(),
+              }
+              updatedHistory = [thread, ...s.history]
+              return { messages: updatedMessages, isLoading: false, history: updatedHistory, activeThreadId: newThreadId }
+            }
+            return { messages: updatedMessages, isLoading: false, history: updatedHistory }
+          })
         } catch (error) {
           console.error('Anthropic API error:', error)
           const errorMessage =
             error instanceof Error ? error.message : 'An unexpected error occurred'
-          set((s) => ({
-            messages: s.messages.map((m) =>
+          set((s) => {
+            const updatedMessages = s.messages.map((m) =>
               m.id === assistantMsgId
                 ? { ...m, content: `Sorry, I encountered an error: ${errorMessage}. Please try again.` }
                 : m
-            ),
-            isLoading: false,
-          }))
+            )
+            return { messages: updatedMessages, isLoading: false }
+          })
         }
       }, toolDelay + 200)
       activeTimers.push(apiCallTimer)

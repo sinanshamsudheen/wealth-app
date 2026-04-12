@@ -50,7 +50,7 @@ export function RunHistoryTable({ runs, showWorkflow = false, agents }: RunHisto
           <TableRow
             key={run.id}
             className="cursor-pointer hover:bg-muted/50"
-            onClick={() => navigate(`/insights/runs/${run.id}`)}
+            onClick={() => navigate(`/home/runs/${run.id}`)}
           >
             <TableCell className="font-mono text-xs">{run.id}</TableCell>
             {showWorkflow && (

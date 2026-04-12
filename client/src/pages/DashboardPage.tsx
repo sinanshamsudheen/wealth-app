@@ -1,102 +1,143 @@
 import { useEffect, useState } from 'react'
-import { Bot, AlertCircle, CheckCircle2, Activity } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { useAgentStore } from '@/store/useAgentStore'
-import { useRunStore } from '@/store/useRunStore'
-import { AgentGrid } from '@/components/agents/AgentGrid'
-import { RunHistoryTable } from '@/components/runs/RunHistoryTable'
-import { ModuleFilter } from '@/components/shared/ModuleFilter'
+import { format, addDays } from 'date-fns'
+import { Clock, CheckCircle2, Loader, Newspaper, Heart } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useChatStore } from '@/store/useChatStore'
+import { summariesApi } from '@/api/endpoints'
+import { LoadingScreen } from '@/components/shared/LoadingScreen'
+import { RelationshipPool } from '@/components/insights/RelationshipPool'
+import { PortfolioAlerts } from '@/components/insights/PortfolioAlerts'
+import { NewsAlerts } from '@/components/insights/NewsAlerts'
+import { ActionItems } from '@/components/insights/ActionItems'
+import { Meetings } from '@/components/insights/Meetings'
+import { PersonalTouch } from '@/components/insights/PersonalTouch'
+import { ActionModal } from '@/components/insights/ActionModal'
+import type { DailySummary } from '@/api/types'
+import { ChatContext } from '@/api/types'
+import type { ActionModalContext, ActionModalType } from '@/api/types'
 
 export function DashboardPage() {
-  const { agents, fetchAgents } = useAgentStore()
-  const { allRuns, fetchRuns } = useRunStore()
-  const [selectedModule, setSelectedModule] = useState('all')
+  const { user } = useAuthStore()
+  const setContext = useChatStore((s) => s.setContext)
+  const [summaries, setSummaries] = useState<DailySummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [actionModal, setActionModal] = useState<ActionModalContext>({ type: null })
 
   useEffect(() => {
-    fetchAgents()
-    fetchRuns()
-  }, [fetchAgents, fetchRuns])
+    let cancelled = false
+    setContext(ChatContext.DAILY_SUMMARY)
+    setLoading(true)
+    summariesApi.list()
+      .then((data) => {
+        if (!cancelled) {
+          setSummaries(data)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+      setContext(ChatContext.DEFAULT)
+    }
+  }, [setContext])
 
-  // Filter by module
-  const filteredAgents = selectedModule === 'all'
-    ? agents
-    : agents.filter(a => a.module === selectedModule)
+  if (loading) {
+    return <LoadingScreen message="Loading your daily brief..." fullScreen={false} />
+  }
 
-  const filteredWorkflows = new Set(filteredAgents.map(a => a.workflow))
-  const filteredRuns = selectedModule === 'all'
-    ? allRuns
-    : allRuns.filter(r => filteredWorkflows.has(r.workflow))
+  const today = summaries[0]
+  if (!today) return null
 
-  // Stats (based on filtered data)
-  const activeRuns = filteredRuns.filter((r) => r.status === 'running' || r.status === 'resuming' || r.status === 'queued')
-  const awaitingReview = filteredRuns.filter((r) => r.status === 'awaiting_review')
-  const completedToday = filteredRuns.filter((r) => {
-    if (r.status !== 'complete' || !r.completed_at) return false
-    const today = new Date()
-    const completed = new Date(r.completed_at)
-    return completed.toDateString() === today.toDateString()
-  })
+  function getGreeting(): string {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good Morning!'
+    if (hour < 17) return 'Good Afternoon!'
+    return 'Good Evening!'
+  }
 
-  // Module counts for filter
-  const moduleCounts: Record<string, number> = { all: agents.length }
-  agents.forEach(a => { moduleCounts[a.module] = (moduleCounts[a.module] || 0) + 1 })
+  const totalAlerts = today.sections.portfolioAlerts.length
+  const totalActions = today.sections.actionItems.length
+  const totalNews = today.sections.newsAlerts.length
+  const totalMeetings = today.sections.meetings.length
+  const totalPersonal = today.sections.personal.length
 
-  const stats = [
-    { label: 'Total Agents', value: filteredAgents.length, icon: Bot, color: 'text-primary' },
-    { label: 'Active Runs', value: activeRuns.length, icon: Activity, color: 'text-blue-500' },
-    { label: 'Awaiting Review', value: awaitingReview.length, icon: AlertCircle, color: 'text-amber-500' },
-    { label: 'Completed Today', value: completedToday.length, icon: CheckCircle2, color: 'text-emerald-500' },
-  ]
+  const advisorName = user?.name || 'James Wilson'
+
+  function injectName(text?: string): string | undefined {
+    return text?.replace(/\{\{ADVISOR_NAME\}\}/g, advisorName)
+  }
+
+  function openAction(type: ActionModalType, clientName?: string, to?: string, subject?: string, description?: string) {
+    setActionModal({ type, clientName: injectName(clientName), prefillTo: to, prefillSubject: injectName(subject), prefillDescription: injectName(description) })
+  }
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-6 lg:p-8 space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-lg font-semibold">Invictus AI</h1>
-        <p className="text-sm text-muted-foreground">Monitor and manage your AI agents and workflows</p>
-      </div>
-
-      {/* Module Filter */}
-      <ModuleFilter selected={selectedModule} onChange={setSelectedModule} counts={moduleCounts} />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${stat.color}`}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Agent Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold">
-            Agents {selectedModule !== 'all' && <span className="text-muted-foreground font-normal">({filteredAgents.length})</span>}
-          </h2>
-          <a href="/insights/agents" className="text-xs text-primary hover:underline">View All</a>
+        <p className="text-sm text-muted-foreground mb-1">
+          {format(addDays(new Date(), 1), "EEEE, do MMMM")}
+        </p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {getGreeting()} {user?.name?.split(' ')[0] || 'James'},
+          </h1>
         </div>
-        <AgentGrid agents={filteredAgents} runs={filteredRuns} />
+
+        {/* Stats ribbon */}
+        <div className="flex items-center gap-6 mt-4 py-3 px-5 rounded-xl bg-white dark:bg-card border border-border/60 shadow-sm w-fit">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">{totalAlerts}</span>
+            <span className="text-sm text-muted-foreground">Alerts</span>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">{totalActions}</span>
+            <span className="text-sm text-muted-foreground">Action Items</span>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="flex items-center gap-2">
+            <Newspaper className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">{totalNews}</span>
+            <span className="text-sm text-muted-foreground">News Alerts</span>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="flex items-center gap-2">
+            <Loader className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">{totalMeetings}</span>
+            <span className="text-sm text-muted-foreground">Meetings</span>
+          </div>
+          <div className="w-px h-5 bg-border" />
+          <div className="flex items-center gap-2">
+            <Heart className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">{totalPersonal}</span>
+            <span className="text-sm text-muted-foreground">Personal Touch</span>
+          </div>
+        </div>
       </div>
 
-      {/* Recent Runs */}
-      {filteredRuns.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold mb-4">Recent Runs</h2>
-          <Card>
-            <CardContent className="p-0">
-              <RunHistoryTable runs={filteredRuns.slice(0, 10)} showWorkflow agents={agents} />
-            </CardContent>
-          </Card>
+      {/* Relationship Pool */}
+      <RelationshipPool pool={today.relationshipPool} />
+
+      {/* Main grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <PortfolioAlerts alerts={today.sections.portfolioAlerts} onAction={openAction} />
+          <ActionItems items={today.sections.actionItems} onAction={openAction} />
+          <PersonalTouch items={today.sections.personal} onAction={openAction} />
         </div>
-      )}
+        <div className="space-y-6">
+          <NewsAlerts alerts={today.sections.newsAlerts} onAction={openAction} />
+          <Meetings meetings={today.sections.meetings} advisorName={advisorName} />
+        </div>
+      </div>
+
+      {/* Action Modal */}
+      <ActionModal context={actionModal} onClose={() => setActionModal({ type: null })} />
     </div>
   )
 }

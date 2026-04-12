@@ -29,7 +29,7 @@ export function AgentsPage() {
   agents.forEach(a => { moduleCounts[a.module] = (moduleCounts[a.module] || 0) + 1 })
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-6 space-y-6">
       <div>
         <h1 className="text-lg font-semibold">Agents</h1>
         <p className="text-sm text-muted-foreground">Browse and run all available AI workflows</p>

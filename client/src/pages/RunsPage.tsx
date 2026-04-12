@@ -35,7 +35,7 @@ export function RunsPage() {
   })
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl">
+    <div className="p-6 space-y-6">
       <div>
         <h1 className="text-lg font-semibold">Run History</h1>
         <p className="text-sm text-muted-foreground">View all agent runs across workflows</p>
