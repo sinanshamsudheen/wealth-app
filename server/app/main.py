@@ -61,10 +61,12 @@ def create_app() -> FastAPI:
     # Routers
     from app.auth.router import router as auth_router
     from app.modules.admin.router import router as admin_router
+    from app.modules.deals.router import router as deals_router
     from app.account.router import router as account_router
 
     app.include_router(auth_router)
     app.include_router(admin_router)
+    app.include_router(deals_router)
     app.include_router(account_router)
 
     # Health check
