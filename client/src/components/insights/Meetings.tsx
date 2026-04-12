@@ -124,7 +124,7 @@ export function Meetings({ meetings, advisorName }: MeetingsProps) {
                 {meeting.hasBrief && (
                   <div className="mt-1.5">
                     <Link
-                      to={`/insights/meetings/${meeting.meetingId}`}
+                      to={`/home/meetings/${meeting.meetingId}`}
                       className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ArrowRight className="h-3 w-3" />

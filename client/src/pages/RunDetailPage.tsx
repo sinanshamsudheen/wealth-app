@@ -36,7 +36,7 @@ export function RunDetailPage() {
   const providerName = (run.llm_config as Record<string, string>)?.provider || 'N/A'
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 gap-1 text-xs">
