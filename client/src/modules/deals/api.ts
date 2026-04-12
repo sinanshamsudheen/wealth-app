@@ -10,22 +10,22 @@ import type {
 
 export const dealsApi = {
   // Investment Types
-  listInvestmentTypes: () => api.get<InvestmentType[]>('/deals/investment-types'),
-  getInvestmentType: (id: string) => api.get<InvestmentType>(`/deals/investment-types/${id}`),
+  listInvestmentTypes: () => api.get<InvestmentType[]>('/deals/settings/investment-types'),
+  getInvestmentType: (id: string) => api.get<InvestmentType>(`/deals/settings/investment-types/${id}`),
   createInvestmentType: (data: Partial<InvestmentType>) =>
-    api.post<InvestmentType>('/deals/investment-types', data),
+    api.post<InvestmentType>('/deals/settings/investment-types', data),
   updateInvestmentType: (id: string, data: Partial<InvestmentType>) =>
-    api.put<InvestmentType>(`/deals/investment-types/${id}`, data),
-  deleteInvestmentType: (id: string) => api.delete<void>(`/deals/investment-types/${id}`),
+    api.put<InvestmentType>(`/deals/settings/investment-types/${id}`, data),
+  deleteInvestmentType: (id: string) => api.delete<void>(`/deals/settings/investment-types/${id}`),
 
   // Document Templates
   listTemplates: (investmentTypeId?: string) => {
     const params = investmentTypeId ? `?investmentTypeId=${investmentTypeId}` : ''
-    return api.get<DocumentTemplate[]>(`/deals/templates${params}`)
+    return api.get<DocumentTemplate[]>(`/deals/settings/templates${params}`)
   },
-  getTemplate: (id: string) => api.get<DocumentTemplate>(`/deals/templates/${id}`),
+  getTemplate: (id: string) => api.get<DocumentTemplate>(`/deals/settings/templates/${id}`),
   updateTemplate: (id: string, data: Partial<DocumentTemplate>) =>
-    api.put<DocumentTemplate>(`/deals/templates/${id}`, data),
+    api.put<DocumentTemplate>(`/deals/settings/templates/${id}`, data),
 
   // Mandates
   listMandates: (status?: MandateStatus) => {
