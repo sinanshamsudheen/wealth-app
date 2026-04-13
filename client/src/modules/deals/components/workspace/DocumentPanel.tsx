@@ -1,10 +1,37 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
+import Image from '@tiptap/extension-image'
+import Placeholder from '@tiptap/extension-placeholder'
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  Heading3,
+  Heading4,
+  List,
+  ListOrdered,
+  Quote,
+  Minus,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  ImageIcon,
+  Code,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { dealsApi } from '../../api'
+import { useUndoRedo } from './useUndoRedo'
 import type { Document, DocumentStatus } from '../../types'
+import type { Editor } from '@tiptap/react'
 
 interface DocumentPanelProps {
   document: Document
@@ -18,13 +45,208 @@ const statusConfig: Record<DocumentStatus, { label: string; className: string }>
   approved: { label: 'Approved', className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' },
 }
 
+interface EditorToolbarProps {
+  editor: Editor | null
+  disabled: boolean
+}
+
+function EditorToolbar({ editor, disabled }: EditorToolbarProps) {
+  if (!editor) return null
+
+  function ToolbarButton({
+    onClick,
+    active,
+    children,
+    title,
+  }: {
+    onClick: () => void
+    active?: boolean
+    children: React.ReactNode
+    title: string
+  }) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn('h-7 w-7', active && 'bg-accent text-accent-foreground')}
+        onClick={onClick}
+        disabled={disabled}
+        title={title}
+        type="button"
+      >
+        {children}
+      </Button>
+    )
+  }
+
+  function Separator() {
+    return <div className="h-5 w-px bg-border mx-1" />
+  }
+
+  return (
+    <div className="flex items-center gap-0.5 px-2 py-1.5 border-b flex-wrap">
+      {/* Text formatting */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        active={editor.isActive('bold')}
+        title="Bold"
+      >
+        <Bold className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        active={editor.isActive('italic')}
+        title="Italic"
+      >
+        <Italic className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        active={editor.isActive('underline')}
+        title="Underline"
+      >
+        <UnderlineIcon className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        active={editor.isActive('strike')}
+        title="Strikethrough"
+      >
+        <Strikethrough className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Headings */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        active={editor.isActive('heading', { level: 1 })}
+        title="Heading 1"
+      >
+        <Heading1 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        active={editor.isActive('heading', { level: 2 })}
+        title="Heading 2"
+      >
+        <Heading2 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        active={editor.isActive('heading', { level: 3 })}
+        title="Heading 3"
+      >
+        <Heading3 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+        active={editor.isActive('heading', { level: 4 })}
+        title="Heading 4"
+      >
+        <Heading4 className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Lists */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        active={editor.isActive('bulletList')}
+        title="Bullet List"
+      >
+        <List className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        active={editor.isActive('orderedList')}
+        title="Ordered List"
+      >
+        <ListOrdered className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Block elements */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        active={editor.isActive('blockquote')}
+        title="Blockquote"
+      >
+        <Quote className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        title="Horizontal Rule"
+      >
+        <Minus className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Alignment */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        active={editor.isActive({ textAlign: 'left' })}
+        title="Align Left"
+      >
+        <AlignLeft className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        active={editor.isActive({ textAlign: 'center' })}
+        title="Align Center"
+      >
+        <AlignCenter className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        active={editor.isActive({ textAlign: 'right' })}
+        title="Align Right"
+      >
+        <AlignRight className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Image */}
+      <ToolbarButton
+        onClick={() => {
+          const url = window.prompt('Image URL:')
+          if (url) {
+            editor.chain().focus().setImage({ src: url }).run()
+          }
+        }}
+        title="Insert Image"
+      >
+        <ImageIcon className="h-4 w-4" />
+      </ToolbarButton>
+
+      <Separator />
+
+      {/* Code */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        active={editor.isActive('code')}
+        title="Inline Code"
+      >
+        <Code className="h-4 w-4" />
+      </ToolbarButton>
+    </div>
+  )
+}
+
 export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPanelProps) {
   const [name, setName] = useState(document.name)
-  const [content, setContent] = useState(document.content ?? '')
   const [editingName, setEditingName] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef(document.content ?? '')
+  const { pushChange } = useUndoRedo()
+
+  const status = statusConfig[document.status]
+  const isReadOnly = document.status === 'approved'
 
   const saveContent = useCallback(
     async (newContent: string) => {
@@ -42,13 +264,60 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
     [opportunityId, document.id, onUpdate],
   )
 
-  function handleContentChange(newContent: string) {
-    setContent(newContent)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      saveContent(newContent)
-    }, 2000)
-  }
+  const handleContentChange = useCallback(
+    (newContent: string) => {
+      const previousContent = contentRef.current
+      if (previousContent === newContent) return
+
+      pushChange({
+        type: 'document_content',
+        targetId: document.id,
+        previousValue: previousContent,
+        newValue: newContent,
+      })
+
+      contentRef.current = newContent
+
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        saveContent(newContent)
+      }, 2000)
+    },
+    [document.id, pushChange, saveContent],
+  )
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3, 4] },
+      }),
+      Underline,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Image,
+      Placeholder.configure({ placeholder: 'Start writing document content...' }),
+    ],
+    content: document.content ?? '',
+    editable: !isReadOnly,
+    onUpdate: ({ editor: ed }) => {
+      const html = ed.getHTML()
+      handleContentChange(html)
+    },
+  })
+
+  // Sync editor content when document prop changes (e.g., from undo/redo)
+  useEffect(() => {
+    if (editor && document.content !== editor.getHTML()) {
+      editor.commands.setContent(document.content ?? '')
+      contentRef.current = document.content ?? ''
+    }
+  }, [document.content, editor])
+
+  // Sync editable state when document status changes
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!isReadOnly)
+    }
+  }, [isReadOnly, editor])
 
   // Cleanup debounce on unmount
   useEffect(() => {
@@ -68,13 +337,10 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
     }
   }
 
-  const status = statusConfig[document.status]
-  const isReadOnly = document.status === 'approved'
-
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full">
       {/* Document header */}
-      <div className="flex items-center gap-3 mb-4 shrink-0">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2 shrink-0">
         {editingName ? (
           <Input
             ref={nameInputRef}
@@ -118,17 +384,16 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
         )}
       </div>
 
-      {/* Document content */}
-      <Textarea
-        value={content}
-        onChange={(e) => handleContentChange(e.target.value)}
-        readOnly={isReadOnly}
-        placeholder={isReadOnly ? '' : 'Start writing document content...'}
-        className={cn(
-          'flex-1 resize-none text-sm leading-relaxed font-mono min-h-0',
-          isReadOnly && 'opacity-80 cursor-default',
-        )}
-      />
+      {/* Toolbar */}
+      <EditorToolbar editor={editor} disabled={isReadOnly} />
+
+      {/* Editor content */}
+      <div className="flex-1 overflow-auto px-4 pb-4">
+        <EditorContent
+          editor={editor}
+          className="prose prose-sm max-w-none h-full [&_.tiptap]:outline-none [&_.tiptap]:p-4 [&_.tiptap]:min-h-full [&_.tiptap_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.tiptap_p.is-editor-empty:first-child::before]:float-left [&_.tiptap_p.is-editor-empty:first-child::before]:h-0 [&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none"
+        />
+      </div>
     </div>
   )
 }
