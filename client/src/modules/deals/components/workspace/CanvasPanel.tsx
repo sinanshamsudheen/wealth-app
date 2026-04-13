@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
-import type { ExcalidrawElement } from '@excalidraw/excalidraw/dist/types/excalidraw/element/types'
-import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/dist/types/excalidraw/types'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -56,11 +54,8 @@ export function CanvasPanel({ document, opportunityId, onUpdate }: CanvasPanelPr
     return () => observer.disconnect()
   }, [])
 
-  function handleChange(
-    elements: readonly ExcalidrawElement[],
-    appState: AppState,
-    files: BinaryFiles,
-  ) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function handleChange(elements: readonly any[], appState: any, files: any) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(async () => {
       // Only persist essential appState — the full object is huge and transient

@@ -8,6 +8,7 @@ import { WorkspaceSidebar } from '../components/workspace/WorkspaceSidebar'
 import { WorkspaceContentTabs } from '../components/workspace/WorkspaceContentTabs'
 import { SnapshotPanel } from '../components/workspace/SnapshotPanel'
 import { DocumentPanel } from '../components/workspace/DocumentPanel'
+import { CanvasPanel } from '../components/workspace/CanvasPanel'
 import { SourceFileViewer } from '../components/workspace/SourceFileViewer'
 import { CreateDocumentDialog } from '../components/workspace/CreateDocumentDialog'
 import { ValidationDialog } from '../components/workspace/ValidationDialog'
@@ -129,8 +130,8 @@ export function OpportunityWorkspacePage() {
       <WorkspaceHeader
         opportunity={opp}
         activeDocument={activeDocument}
-        canUndo={canUndo}
-        canRedo={canRedo}
+        canUndo={activeTab?.type !== 'note' && canUndo}
+        canRedo={activeTab?.type !== 'note' && canRedo}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onBack={() => navigate('/home/deals/opportunities')}
@@ -201,8 +202,16 @@ export function OpportunityWorkspacePage() {
                 onUpdate={(updated) => useDealsStore.setState({ activeOpportunity: updated })}
               />
             )}
-            {(activeTab?.type === 'document' || activeTab?.type === 'note') && activeDocument && (
+            {activeTab?.type === 'document' && activeDocument && (
               <DocumentPanel
+                key={activeDocument.id}
+                document={activeDocument}
+                opportunityId={opp.id}
+                onUpdate={(doc) => store.updateWorkspaceDocument(doc)}
+              />
+            )}
+            {activeTab?.type === 'note' && activeDocument && (
+              <CanvasPanel
                 key={activeDocument.id}
                 document={activeDocument}
                 opportunityId={opp.id}

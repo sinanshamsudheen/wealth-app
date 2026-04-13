@@ -1,4 +1,4 @@
-import { Camera, FileText, Paperclip, StickyNote, X } from 'lucide-react'
+import { Camera, FileText, Palette, Paperclip, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { WorkspaceTab, WorkspaceTabType } from '../../types'
 
@@ -12,7 +12,7 @@ interface WorkspaceContentTabsProps {
 const tabIcons: Record<WorkspaceTabType, typeof Camera> = {
   snapshot: Camera,
   document: FileText,
-  note: StickyNote,
+  note: Palette,
   source_file: Paperclip,
 }
 
