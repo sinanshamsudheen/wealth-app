@@ -25,7 +25,8 @@ interface ValidationDialogProps {
 
 const STAGE_LABELS: Record<string, string> = {
   pre_screening: 'Pre-Screening',
-  ic_memo: 'IC Memo',
+  due_diligence: 'Due Diligence',
+  ic_review: 'IC Review',
   approved: 'Final Approval',
 }
 
@@ -41,8 +42,9 @@ const typeLabels: Record<string, string> = {
 
 function getNextStage(current: ApprovalStage): ApprovalStage | null {
   if (current === 'new') return 'pre_screening'
-  if (current === 'pre_screening') return 'ic_memo'
-  if (current === 'ic_memo') return 'approved'
+  if (current === 'pre_screening') return 'due_diligence'
+  if (current === 'due_diligence') return 'ic_review'
+  if (current === 'ic_review') return 'approved'
   return null
 }
 
@@ -53,7 +55,8 @@ function getInitials(name: string): string {
 function StageProgress({ currentStage }: { currentStage: ApprovalStage }) {
   const stages = [
     { key: 'pre_screening', label: 'Pre-Screening' },
-    { key: 'ic_memo', label: 'IC Memo' },
+    { key: 'due_diligence', label: 'Due Diligence' },
+    { key: 'ic_review', label: 'IC Review' },
     { key: 'approved', label: 'Approved' },
   ]
   const currentIdx = stages.findIndex(s => s.key === currentStage)

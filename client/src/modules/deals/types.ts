@@ -87,7 +87,7 @@ export interface Mandate {
 
 export type PipelineStatus = 'new' | 'active' | 'archived' | 'ignored'
 
-export type ApprovalStage = 'new' | 'pre_screening' | 'ic_memo' | 'approved' | 'rejected'
+export type ApprovalStage = 'new' | 'pre_screening' | 'due_diligence' | 'ic_review' | 'approved' | 'rejected'
 
 export type FitScore = 'strong' | 'moderate' | 'weak'
 

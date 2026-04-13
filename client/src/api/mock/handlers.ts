@@ -893,8 +893,10 @@ export const handlers = [
         const opp = opportunities[oppIdx] as unknown as Record<string, unknown>
         const currentStage = opp.approvalStage as string
         if (currentStage === 'pre_screening') {
-          opp.approvalStage = 'ic_memo'
-        } else if (currentStage === 'ic_memo') {
+          opp.approvalStage = 'due_diligence'
+        } else if (currentStage === 'due_diligence') {
+          opp.approvalStage = 'ic_review'
+        } else if (currentStage === 'ic_review') {
           opp.approvalStage = 'approved'
         }
       }

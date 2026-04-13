@@ -1,80 +1,53 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { AlertCircle, Check, RotateCcw } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { useDealsStore } from '../../store'
 import { dealsApi } from '../../api'
-import type { Document, DocumentReview } from '../../types'
+import type { ApprovalRequest } from '../../types'
+
+const STAGE_LABELS: Record<string, string> = {
+  pre_screening: 'Pre-Screening',
+  due_diligence: 'Due Diligence',
+  ic_review: 'IC Review',
+  approved: 'Final Approval',
+}
 
 interface ReviewBannerProps {
   opportunityId: string
-  documents: Document[]
+  approvals: ApprovalRequest[]
   currentUserId: string
+  onApprovalUpdate: (approval: ApprovalRequest) => void
 }
 
-export function ReviewBanner({ opportunityId, documents, currentUserId }: ReviewBannerProps) {
-  const [reviews, setReviews] = useState<DocumentReview[]>([])
-  const [activeAction, setActiveAction] = useState<{ reviewId: string; action: 'approve' | 'request_changes' } | null>(null)
+export function ReviewBanner({ opportunityId, approvals, currentUserId, onApprovalUpdate }: ReviewBannerProps) {
+  const [activeAction, setActiveAction] = useState<{ approvalId: string; action: 'approve' | 'request_changes' } | null>(null)
   const [rationale, setRationale] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const updateWorkspaceDocument = useDealsStore((s) => s.updateWorkspaceDocument)
 
-  useEffect(() => {
-    let cancelled = false
+  const pendingForUser = approvals.filter(
+    (a) => a.status === 'pending' && a.reviewerId === currentUserId,
+  )
 
-    async function fetchReviews() {
-      try {
-        const allReviews = await dealsApi.listReviews({ status: 'pending' })
+  if (pendingForUser.length === 0) {
+    return null
+  }
 
-        // Filter reviews to those relevant to this workspace's documents
-        const docIds = new Set(documents.map((d) => d.id))
-        const relevant = allReviews.filter((r) =>
-          r.documents.some((rd) => docIds.has(rd.documentId)),
-        )
+  const approval = pendingForUser[0]
+  const stageLabel = STAGE_LABELS[approval.stage] ?? approval.stage
+  const docCount = approval.documentIds.length
 
-        if (!cancelled) {
-          setReviews(relevant)
-        }
-      } catch {
-        // Silently fail — banner just won't render
-      }
-    }
-
-    if (documents.length > 0) {
-      fetchReviews()
-    }
-
-    return () => {
-      cancelled = true
-    }
-  }, [opportunityId, documents])
-
-  async function handleSubmitAction() {
+  async function handleSubmit() {
     if (!activeAction || !rationale.trim()) return
 
     setSubmitting(true)
     try {
       const status = activeAction.action === 'approve' ? 'approved' : 'changes_requested'
-      await dealsApi.updateReview(activeAction.reviewId, {
+      const updated = await dealsApi.updateApproval(opportunityId, activeAction.approvalId, {
         status,
         rationale: rationale.trim(),
       })
-
-      // Find which documents are part of this review
-      const review = reviews.find((r) => r.id === activeAction.reviewId)
-      if (review) {
-        const reviewDocIds = new Set(review.documents.map((d) => d.documentId))
-        const newDocStatus = activeAction.action === 'approve' ? 'approved' as const : 'draft' as const
-
-        for (const doc of documents) {
-          if (reviewDocIds.has(doc.id)) {
-            updateWorkspaceDocument({ ...doc, status: newDocStatus })
-          }
-        }
-      }
-
-      // Remove the handled review from local state
-      setReviews((prev) => prev.filter((r) => r.id !== activeAction.reviewId))
+      onApprovalUpdate(updated)
       setActiveAction(null)
       setRationale('')
     } catch {
@@ -84,17 +57,6 @@ export function ReviewBanner({ opportunityId, documents, currentUserId }: Review
     }
   }
 
-  // Count documents in review
-  const inReviewDocs = documents.filter((d) => d.status === 'in_review')
-
-  if (reviews.length === 0 || inReviewDocs.length === 0) {
-    return null
-  }
-
-  // Check if the current user is a reviewer on any of the active reviews
-  const userReviews = reviews.filter((r) => r.reviewerId === currentUserId)
-  const isReviewer = userReviews.length > 0
-
   return (
     <div className="border-b bg-amber-50 px-4 py-3 dark:bg-amber-950/30">
       <div className="flex items-start gap-3">
@@ -102,23 +64,29 @@ export function ReviewBanner({ opportunityId, documents, currentUserId }: Review
 
         <div className="flex-1 space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-              {inReviewDocs.length} document{inReviewDocs.length !== 1 ? 's' : ''} pending review
-              {reviews[0] && (
-                <span className="font-normal text-amber-700 dark:text-amber-300">
-                  {' '}— reviewer: {reviews[0].reviewerId}
-                </span>
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                This opportunity is pending{' '}
+                <Badge variant="outline" className="mx-0.5 border-amber-300 text-amber-700 dark:border-amber-600 dark:text-amber-300">
+                  {stageLabel}
+                </Badge>{' '}
+                approval
+              </p>
+              {docCount > 0 && (
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  {docCount} document{docCount !== 1 ? 's' : ''} shared for review
+                </p>
               )}
-            </p>
+            </div>
 
-            {isReviewer && !activeAction && (
+            {!activeAction && (
               <div className="flex shrink-0 gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   className="border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-950/50 dark:text-green-300 dark:hover:bg-green-950"
                   onClick={() =>
-                    setActiveAction({ reviewId: userReviews[0].id, action: 'approve' })
+                    setActiveAction({ approvalId: approval.id, action: 'approve' })
                   }
                 >
                   <Check className="mr-1 h-3.5 w-3.5" />
@@ -128,7 +96,7 @@ export function ReviewBanner({ opportunityId, documents, currentUserId }: Review
                   size="sm"
                   variant="outline"
                   onClick={() =>
-                    setActiveAction({ reviewId: userReviews[0].id, action: 'request_changes' })
+                    setActiveAction({ approvalId: approval.id, action: 'request_changes' })
                   }
                 >
                   <RotateCcw className="mr-1 h-3.5 w-3.5" />
@@ -154,7 +122,7 @@ export function ReviewBanner({ opportunityId, documents, currentUserId }: Review
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={handleSubmitAction}
+                  onClick={handleSubmit}
                   disabled={!rationale.trim() || submitting}
                 >
                   {submitting

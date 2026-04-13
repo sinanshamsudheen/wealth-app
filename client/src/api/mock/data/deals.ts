@@ -351,7 +351,7 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     ],
     strategyFit: 'strong',
     recommendation: 'approve',
-    approvalStage: 'ic_memo',
+    approvalStage: 'ic_review',
     createdBy: 'user-usman',
     createdAt: '2026-02-10T10:00:00Z',
     updatedAt: '2026-04-01T14:00:00Z',

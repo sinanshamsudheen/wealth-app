@@ -1,11 +1,18 @@
 import {
   ArrowLeft,
   Bell,
+  Check,
+  CheckCircle,
+  ChevronDown,
+  ClipboardCheck,
   Download,
+  FileCheck,
   Redo2,
+  Search,
   Share2,
   Shield,
   Undo2,
+  XCircle,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -19,12 +26,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { downloadAsHTML, downloadAsText } from './downloadDocument'
 
-import type { Opportunity, Document } from '../../types'
+import type { ApprovalStage, Opportunity, Document } from '../../types'
 
 interface WorkspaceHeaderProps {
   opportunity: Opportunity
@@ -36,7 +44,33 @@ interface WorkspaceHeaderProps {
   onBack: () => void
   onValidate: () => void
   onShare: () => void
+  onStageChange: (stage: ApprovalStage) => void
 }
+
+const stageColors: Record<string, string> = {
+  new: 'bg-gray-400',
+  pre_screening: 'bg-blue-500',
+  due_diligence: 'bg-amber-500',
+  ic_review: 'bg-purple-500',
+  approved: 'bg-emerald-500',
+  rejected: 'bg-red-500',
+}
+
+const stageLabels: Record<string, string> = {
+  new: 'New',
+  pre_screening: 'Pre-Screening',
+  due_diligence: 'Due Diligence',
+  ic_review: 'IC Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+}
+
+const stageItems: { stage: ApprovalStage; icon: typeof ClipboardCheck }[] = [
+  { stage: 'pre_screening', icon: ClipboardCheck },
+  { stage: 'due_diligence', icon: Search },
+  { stage: 'ic_review', icon: FileCheck },
+  { stage: 'approved', icon: CheckCircle },
+]
 
 const pipelineColors: Record<string, string> = {
   new: 'bg-blue-500/15 text-blue-700 dark:text-blue-400',
@@ -71,6 +105,7 @@ export function WorkspaceHeader({
   onBack,
   onValidate,
   onShare,
+  onStageChange,
 }: WorkspaceHeaderProps) {
   const hasDoc = activeDocument !== null
 
@@ -93,6 +128,42 @@ export function WorkspaceHeader({
       >
         {capitalize(opportunity.pipelineStatus)}
       </Badge>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium cursor-pointer hover:bg-accent transition-colors"
+        >
+          <span className={cn('h-2 w-2 rounded-full', stageColors[opportunity.approvalStage])} />
+          {stageLabels[opportunity.approvalStage]}
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground tracking-wide">
+            DEAL STAGE
+          </div>
+          {stageItems.map(({ stage, icon: Icon }) => (
+            <DropdownMenuItem
+              key={stage}
+              onClick={() => onStageChange(stage)}
+              className="flex items-center gap-2"
+            >
+              <Icon className="h-4 w-4" />
+              {stageLabels[stage]}
+              {opportunity.approvalStage === stage && (
+                <Check className="h-4 w-4 ml-auto" />
+              )}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => onStageChange('rejected')}
+            className="flex items-center gap-2 text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+          >
+            <XCircle className="h-4 w-4" />
+            Reject Deal
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {(opportunity.strategyFit || opportunity.recommendation) && (
         <>
