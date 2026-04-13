@@ -8,7 +8,6 @@ import { WorkspaceSidebar } from '../components/workspace/WorkspaceSidebar'
 import { WorkspaceContentTabs } from '../components/workspace/WorkspaceContentTabs'
 import { SnapshotPanel } from '../components/workspace/SnapshotPanel'
 import { DocumentPanel } from '../components/workspace/DocumentPanel'
-import { CanvasPanel } from '../components/workspace/CanvasPanel'
 import { SourceFileViewer } from '../components/workspace/SourceFileViewer'
 import { CreateDocumentDialog } from '../components/workspace/CreateDocumentDialog'
 import { ValidationDialog } from '../components/workspace/ValidationDialog'
@@ -96,18 +95,6 @@ export function OpportunityWorkspacePage() {
     }
   }, [redo, store.activeOpportunity, store.workspaceDocuments])
 
-  async function handleCreateNote() {
-    if (!oppId) return
-    try {
-      const doc = await dealsApi.createDocument(oppId, {
-        name: 'Untitled Note',
-        documentType: 'note',
-      })
-      store.addWorkspaceDocument(doc)
-    } catch {
-      // TODO: toast
-    }
-  }
 
   if (store.loadingWorkspace || !store.activeOpportunity) {
     return <div className="text-muted-foreground p-6">Loading workspace...</div>
@@ -180,7 +167,6 @@ export function OpportunityWorkspacePage() {
           activeTabId={store.activeTabId}
           onOpenTab={(tab: WorkspaceTab) => store.openTab(tab)}
           onCreateDocument={() => setShowCreateDoc(true)}
-          onCreateNote={handleCreateNote}
           onToggle={() => store.toggleSidebar()}
         />
 
@@ -210,13 +196,10 @@ export function OpportunityWorkspacePage() {
                 onUpdate={(doc) => store.updateWorkspaceDocument(doc)}
               />
             )}
-            {activeTab?.type === 'note' && activeDocument && (
-              <CanvasPanel
-                key={activeDocument.id}
-                document={activeDocument}
-                opportunityId={opp.id}
-                onUpdate={(doc) => store.updateWorkspaceDocument(doc)}
-              />
+            {activeTab?.type === 'note' && (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                Canvas notes coming soon
+              </div>
             )}
             {activeTab?.type === 'source_file' && activeSourceFile && (
               <SourceFileViewer sourceFile={activeSourceFile} />

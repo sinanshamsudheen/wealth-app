@@ -18,7 +18,6 @@ interface WorkspaceSidebarProps {
   activeTabId: string | null
   onOpenTab: (tab: WorkspaceTab) => void
   onCreateDocument: () => void
-  onCreateNote: () => void
   onToggle: () => void
 }
 
@@ -35,11 +34,9 @@ export function WorkspaceSidebar({
   activeTabId,
   onOpenTab,
   onCreateDocument,
-  onCreateNote,
   onToggle,
 }: WorkspaceSidebarProps) {
   const deliverables = documents.filter(d => d.documentType !== 'note')
-  const notes = documents.filter(d => d.documentType === 'note')
 
   if (collapsed) {
     return (
@@ -61,16 +58,10 @@ export function WorkspaceSidebar({
             )}
           </button>
           <button
-            className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            title="Notes"
-            onClick={onToggle}
+            className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground/50 cursor-default"
+            title="Notes — Coming soon"
           >
             <StickyNote className="h-4 w-4" />
-            {notes.length > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
-                {notes.length}
-              </span>
-            )}
           </button>
           <button
             className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -125,31 +116,13 @@ export function WorkspaceSidebar({
           ))}
         </ul>
 
-        {/* Notes */}
-        <SectionHeader
-          label="Notes"
-          count={notes.length}
-          onAdd={onCreateNote}
-        />
-        <ul className="mb-4 space-y-0.5">
-          {notes.map(doc => (
-            <SidebarItem
-              key={doc.id}
-              active={activeTabId === doc.id}
-              onClick={() =>
-                onOpenTab({
-                  id: doc.id,
-                  type: 'note',
-                  label: doc.name,
-                  documentId: doc.id,
-                  closeable: true,
-                })
-              }
-            >
-              <span className="flex-1 truncate text-sm">{doc.name}</span>
-            </SidebarItem>
-          ))}
-        </ul>
+        {/* Notes — Coming Soon */}
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Notes
+          </span>
+          <span className="text-[10px] text-muted-foreground italic">Coming soon</span>
+        </div>
 
         {/* Source Documents */}
         <SourceDocumentsHeader count={sourceFiles.length} />
