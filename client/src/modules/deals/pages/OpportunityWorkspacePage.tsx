@@ -12,7 +12,9 @@ import { CreateDocumentDialog } from '../components/workspace/CreateDocumentDial
 import { ValidationDialog } from '../components/workspace/ValidationDialog'
 import { ShareDialog } from '../components/workspace/ShareDialog'
 import { ReviewBanner } from '../components/workspace/ReviewBanner'
-import type { WorkspaceTab } from '../types'
+import { WorkspaceActionBar } from '../components/workspace/WorkspaceActionBar'
+import { downloadAsHTML } from '../components/workspace/downloadDocument'
+import type { WorkspaceTab, Document } from '../types'
 import { dealsApi } from '../api'
 
 export function OpportunityWorkspacePage() {
@@ -186,6 +188,16 @@ export function OpportunityWorkspacePage() {
               </div>
             )}
           </div>
+
+          {/* Context-aware bottom action bar */}
+          <WorkspaceActionBar
+            activeTab={activeTab}
+            opportunity={opp}
+            documents={store.workspaceDocuments}
+            onValidate={() => setShowValidation(true)}
+            onShare={() => setShowShare(true)}
+            onDownload={(doc: Document) => downloadAsHTML(doc, opp.name)}
+          />
         </div>
       </div>
 
