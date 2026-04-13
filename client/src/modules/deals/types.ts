@@ -236,6 +236,79 @@ export interface SourceFile {
 
 // ── Workspace ───────────────────────────────────────────────────────
 
+// ── Email Integration ──────────────────────────────────────────────
+
+export type EmailImportStatus = 'new' | 'imported' | 'ignored'
+
+export interface EmailAccount {
+  id: string
+  userId: string
+  provider: string
+  emailAddress: string
+  status: 'connected' | 'syncing' | 'error' | 'disconnected'
+  lastSyncedAt: string | null
+  syncLabels: string[] | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EmailAttachment {
+  id: string
+  fileName: string | null
+  fileType: string | null
+  fileSize: number | null
+}
+
+export interface SyncedEmail {
+  id: string
+  emailAccountId: string
+  fromAddress: string | null
+  fromName: string | null
+  subject: string | null
+  bodyText: string | null
+  bodyHtml: string | null
+  receivedAt: string | null
+  attachmentCount: number
+  importStatus: EmailImportStatus
+  opportunityId: string | null
+  attachments: EmailAttachment[]
+  createdAt: string
+}
+
+// ── Google Drive ───────────────────────────────────────────────────
+
+export interface GoogleDriveAccount {
+  id: string
+  userId: string
+  emailAddress: string | null
+  status: 'connected' | 'disconnected'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DriveFolder {
+  id: string
+  name: string
+  path: string
+  hasChildren: boolean
+}
+
+export interface GoogleDriveImportJob {
+  id: string
+  accountId: string
+  folderPaths: string[] | null
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  totalFiles: number
+  processedFiles: number
+  opportunitiesCreated: number
+  errorLog: Record<string, unknown> | null
+  startedAt: string | null
+  completedAt: string | null
+  createdAt: string
+}
+
+// ── Workspace ───────────────────────────────────────────────────────
+
 export type WorkspaceTabType = 'snapshot' | 'document'
 
 export interface WorkspaceTab {

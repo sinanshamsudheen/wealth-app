@@ -6,6 +6,10 @@ import type {
   AssetManager,
   NewsItem,
   DashboardSummary,
+  EmailAccount,
+  SyncedEmail,
+  GoogleDriveAccount,
+  DriveFolder,
 } from '@/modules/deals/types'
 
 // ── Investment Types ──────────────────────────────────────────────────
@@ -666,4 +670,183 @@ export const MOCK_SHARES: DocumentShare[] = [
     sharedBy: 'user-pine',
     createdAt: '2026-03-01T12:00:00Z',
   },
+]
+
+// ── Email Accounts ───────────────────────────────────────────────────
+
+export const MOCK_EMAIL_ACCOUNTS: EmailAccount[] = [
+  {
+    id: 'email-acc-1',
+    userId: 'user-raoof',
+    provider: 'gmail',
+    emailAddress: 'raoof@watar.com',
+    status: 'connected',
+    lastSyncedAt: '2026-04-13T08:00:00Z',
+    syncLabels: ['INBOX'],
+    createdAt: '2026-04-10T10:00:00Z',
+    updatedAt: '2026-04-13T08:00:00Z',
+  },
+]
+
+// ── Synced Emails ────────────────────────────────────────────────────
+
+export const MOCK_SYNCED_EMAILS: SyncedEmail[] = [
+  {
+    id: 'email-1',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'ir@abingworth.com',
+    fromName: 'Abingworth Investor Relations',
+    subject: 'Abingworth ABV 9 — LP Opportunity',
+    bodyText: 'We are pleased to present Abingworth Bioventures IX, our latest life sciences fund targeting $600M. Attached is the preliminary PPM and term sheet for your review.',
+    bodyHtml: null,
+    receivedAt: '2026-04-12T09:15:00Z',
+    attachmentCount: 2,
+    importStatus: 'new',
+    opportunityId: null,
+    attachments: [
+      { id: 'att-1a', fileName: 'ABV9_PPM_Draft.pdf', fileType: 'application/pdf', fileSize: 4_500_000 },
+      { id: 'att-1b', fileName: 'ABV9_Term_Sheet.pdf', fileType: 'application/pdf', fileSize: 890_000 },
+    ],
+    createdAt: '2026-04-12T09:16:00Z',
+  },
+  {
+    id: 'email-2',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'deals@blackstone.com',
+    fromName: 'Blackstone Capital Markets',
+    subject: 'Blackstone BREP X Co-Investment',
+    bodyText: 'Following our discussion, please find the co-investment allocation details for the European logistics portfolio. The minimum ticket is $25M with no management fee.',
+    bodyHtml: null,
+    receivedAt: '2026-04-11T14:30:00Z',
+    attachmentCount: 3,
+    importStatus: 'imported',
+    opportunityId: 'opp-brep-x',
+    attachments: [
+      { id: 'att-2a', fileName: 'BREP_X_CoInvest_Memo.pdf', fileType: 'application/pdf', fileSize: 3_200_000 },
+      { id: 'att-2b', fileName: 'Logistics_Portfolio_Overview.pdf', fileType: 'application/pdf', fileSize: 2_100_000 },
+      { id: 'att-2c', fileName: 'Side_Letter_Draft.docx', fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', fileSize: 450_000 },
+    ],
+    createdAt: '2026-04-11T14:31:00Z',
+  },
+  {
+    id: 'email-3',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'sarah.chen@cimgroup.com',
+    fromName: 'Sarah Chen',
+    subject: 'CIM — TechCo Series C Growth Equity',
+    bodyText: 'CIM is leading a $150M Series C round in TechCo, a high-growth enterprise SaaS platform. We are offering co-investment alongside our Fund VII. Revenue is $45M ARR growing 80% YoY.',
+    bodyHtml: null,
+    receivedAt: '2026-04-11T10:00:00Z',
+    attachmentCount: 1,
+    importStatus: 'new',
+    opportunityId: null,
+    attachments: [
+      { id: 'att-3a', fileName: 'TechCo_SeriesC_Teaser.pdf', fileType: 'application/pdf', fileSize: 1_800_000 },
+    ],
+    createdAt: '2026-04-11T10:01:00Z',
+  },
+  {
+    id: 'email-4',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'mark.jones@goldmansachs.com',
+    fromName: 'Mark Jones',
+    subject: 'GS Infrastructure Partners Fund V — Final Close',
+    bodyText: 'Goldman Sachs Infrastructure Partners is approaching final close for Fund V at $15B. Attached are the updated terms and performance data from Fund IV.',
+    bodyHtml: null,
+    receivedAt: '2026-04-10T16:45:00Z',
+    attachmentCount: 2,
+    importStatus: 'new',
+    opportunityId: null,
+    attachments: [
+      { id: 'att-4a', fileName: 'GSIP_V_LP_Update.pdf', fileType: 'application/pdf', fileSize: 5_600_000 },
+      { id: 'att-4b', fileName: 'Fund_IV_Performance.xlsx', fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', fileSize: 320_000 },
+    ],
+    createdAt: '2026-04-10T16:46:00Z',
+  },
+  {
+    id: 'email-5',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'allocations@sequoiacap.com',
+    fromName: 'Sequoia Capital Allocations',
+    subject: 'Sequoia Growth Fund — Q1 2026 Update & New Allocation',
+    bodyText: 'Please find attached our Q1 2026 quarterly update and details on a new allocation opportunity in the Sequoia Growth Fund evergreen vehicle.',
+    bodyHtml: null,
+    receivedAt: '2026-04-09T11:20:00Z',
+    attachmentCount: 0,
+    importStatus: 'imported',
+    opportunityId: 'opp-sequoia-growth',
+    attachments: [],
+    createdAt: '2026-04-09T11:21:00Z',
+  },
+  {
+    id: 'email-6',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'fundraising@apolloglobal.com',
+    fromName: 'Apollo Global Management',
+    subject: 'Apollo Natural Resources Fund II — Invitation to Commit',
+    bodyText: 'Apollo is raising its second dedicated natural resources fund targeting $3B. The strategy focuses on energy transition and critical minerals. Minimum commitment is $10M.',
+    bodyHtml: null,
+    receivedAt: '2026-04-08T08:30:00Z',
+    attachmentCount: 0,
+    importStatus: 'new',
+    opportunityId: null,
+    attachments: [],
+    createdAt: '2026-04-08T08:31:00Z',
+  },
+  {
+    id: 'email-7',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'noreply@pitchbook.com',
+    fromName: 'PitchBook Alerts',
+    subject: 'Weekly PE Deal Alert — April 7, 2026',
+    bodyText: 'Your weekly summary of new PE and VC fundraising activity is ready. This week saw 23 new fund launches across growth equity, buyout, and venture strategies.',
+    bodyHtml: null,
+    receivedAt: '2026-04-07T07:00:00Z',
+    attachmentCount: 0,
+    importStatus: 'ignored',
+    opportunityId: null,
+    attachments: [],
+    createdAt: '2026-04-07T07:01:00Z',
+  },
+  {
+    id: 'email-8',
+    emailAccountId: 'email-acc-1',
+    fromAddress: 'james.wu@brookfield.com',
+    fromName: 'James Wu',
+    subject: 'Brookfield Real Estate Credit Fund IV — LP Materials',
+    bodyText: 'Brookfield is launching its fourth real estate credit fund targeting $8B. The fund will focus on senior secured lending across logistics, data centers, and life sciences real estate.',
+    bodyHtml: null,
+    receivedAt: '2026-04-06T15:10:00Z',
+    attachmentCount: 2,
+    importStatus: 'new',
+    opportunityId: null,
+    attachments: [
+      { id: 'att-8a', fileName: 'Brookfield_RECF_IV_Teaser.pdf', fileType: 'application/pdf', fileSize: 2_900_000 },
+      { id: 'att-8b', fileName: 'Credit_Strategy_Overview.pdf', fileType: 'application/pdf', fileSize: 1_500_000 },
+    ],
+    createdAt: '2026-04-06T15:11:00Z',
+  },
+]
+
+// ── Google Drive Accounts ────────────────────────────────────────────
+
+export const MOCK_GOOGLE_DRIVE_ACCOUNTS: GoogleDriveAccount[] = [
+  {
+    id: 'gdrive-acc-1',
+    userId: 'user-raoof',
+    emailAddress: 'raoof@watar.com',
+    status: 'connected',
+    createdAt: '2026-04-10T10:00:00Z',
+    updatedAt: '2026-04-10T10:00:00Z',
+  },
+]
+
+// ── Drive Folders ────────────────────────────────────────────────────
+
+export const MOCK_DRIVE_FOLDERS: DriveFolder[] = [
+  { id: 'folder-1', name: 'Deal Documents 2026', path: '/Deal Documents 2026', hasChildren: true },
+  { id: 'folder-2', name: 'Fund Opportunities', path: '/Fund Opportunities', hasChildren: true },
+  { id: 'folder-3', name: 'Direct Investments', path: '/Direct Investments', hasChildren: false },
+  { id: 'folder-4', name: 'Co-Investment Pipeline', path: '/Co-Investment Pipeline', hasChildren: true },
+  { id: 'folder-5', name: 'Archive 2025', path: '/Archive 2025', hasChildren: false },
 ]

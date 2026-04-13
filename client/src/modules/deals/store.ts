@@ -12,6 +12,9 @@ import type {
   DashboardSummary,
   Document,
   WorkspaceTab,
+  EmailAccount,
+  SyncedEmail,
+  GoogleDriveAccount,
 } from './types'
 
 interface DealsState {
@@ -45,6 +48,19 @@ interface DealsState {
   fetchAssetManagers: (type?: string) => Promise<void>
   fetchNews: (category?: string) => Promise<void>
   fetchDashboardSummary: () => Promise<void>
+
+  // Email & Drive
+  emailAccounts: EmailAccount[]
+  syncedEmails: SyncedEmail[]
+  selectedEmail: SyncedEmail | null
+  loadingEmails: boolean
+  googleDriveAccounts: GoogleDriveAccount[]
+  loadingDrive: boolean
+
+  fetchEmailAccounts: () => Promise<void>
+  fetchEmails: (filters?: { accountId?: string; importStatus?: string; search?: string }) => Promise<void>
+  selectEmail: (email: SyncedEmail | null) => void
+  fetchGoogleDriveAccounts: () => Promise<void>
 
   // Workspace
   activeOpportunity: Opportunity | null
@@ -149,6 +165,43 @@ export const useDealsStore = create<DealsState>((set, get) => ({
       set({ dashboardSummary })
     } finally {
       set({ loadingDashboard: false })
+    }
+  },
+
+  // Email & Drive
+  emailAccounts: [],
+  syncedEmails: [],
+  selectedEmail: null,
+  loadingEmails: false,
+  googleDriveAccounts: [],
+  loadingDrive: false,
+
+  fetchEmailAccounts: async () => {
+    try {
+      const emailAccounts = await dealsApi.listEmailAccounts()
+      set({ emailAccounts })
+    } catch { /* ignore */ }
+  },
+
+  fetchEmails: async (filters) => {
+    set({ loadingEmails: true })
+    try {
+      const syncedEmails = await dealsApi.listEmails(filters)
+      set({ syncedEmails })
+    } finally {
+      set({ loadingEmails: false })
+    }
+  },
+
+  selectEmail: (email) => set({ selectedEmail: email }),
+
+  fetchGoogleDriveAccounts: async () => {
+    set({ loadingDrive: true })
+    try {
+      const googleDriveAccounts = await dealsApi.listGoogleDriveAccounts()
+      set({ googleDriveAccounts })
+    } finally {
+      set({ loadingDrive: false })
     }
   },
 

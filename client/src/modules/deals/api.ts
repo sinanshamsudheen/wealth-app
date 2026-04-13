@@ -13,6 +13,11 @@ import type {
   SourceFile,
   DocumentReview,
   DocumentShare,
+  EmailAccount,
+  SyncedEmail,
+  GoogleDriveAccount,
+  DriveFolder,
+  GoogleDriveImportJob,
 } from './types'
 
 export const dealsApi = {
@@ -117,4 +122,42 @@ export const dealsApi = {
     api.post<DocumentShare[]>(`/deals/documents/${docId}/share`, data),
   removeShare: (docId: string, shareId: string) =>
     api.delete<void>(`/deals/documents/${docId}/shares/${shareId}`),
+
+  // Email Accounts
+  listEmailAccounts: () => api.get<EmailAccount[]>('/deals/email/accounts'),
+  connectEmailAccount: (data: { provider?: string; emailAddress: string }) =>
+    api.post<EmailAccount>('/deals/email/accounts', data),
+  disconnectEmailAccount: (id: string) => api.delete<void>(`/deals/email/accounts/${id}`),
+  triggerEmailSync: (id: string) => api.post<EmailAccount>(`/deals/email/accounts/${id}/sync`, {}),
+
+  // Synced Emails
+  listEmails: (filters?: { accountId?: string; importStatus?: string; hasAttachments?: boolean; search?: string }) => {
+    const params = new URLSearchParams()
+    if (filters?.accountId) params.set('accountId', filters.accountId)
+    if (filters?.importStatus) params.set('importStatus', filters.importStatus)
+    if (filters?.hasAttachments !== undefined) params.set('hasAttachments', String(filters.hasAttachments))
+    if (filters?.search) params.set('search', filters.search)
+    const qs = params.toString()
+    return api.get<SyncedEmail[]>(`/deals/emails${qs ? `?${qs}` : ''}`)
+  },
+  getEmail: (id: string) => api.get<SyncedEmail>(`/deals/emails/${id}`),
+  importEmail: (id: string, data: { investmentTypeId: string }) =>
+    api.post<Opportunity>(`/deals/emails/${id}/import`, data),
+  ignoreEmail: (id: string) => api.put<void>(`/deals/emails/${id}/ignore`, {}),
+
+  // Google Drive
+  listGoogleDriveAccounts: () => api.get<GoogleDriveAccount[]>('/deals/integrations/google-drive'),
+  connectGoogleDrive: (data: { emailAddress?: string }) =>
+    api.post<GoogleDriveAccount>('/deals/integrations/google-drive', data),
+  disconnectGoogleDrive: (id: string) =>
+    api.delete<void>(`/deals/integrations/google-drive/${id}`),
+  browseGoogleDrive: (accountId: string, parentFolderId?: string) => {
+    const params = new URLSearchParams({ accountId })
+    if (parentFolderId) params.set('parentFolderId', parentFolderId)
+    return api.get<{ folders: DriveFolder[] }>(`/deals/integrations/google-drive/browse?${params}`)
+  },
+  startGoogleDriveImport: (accountId: string, data: { folderIds: string[] }) =>
+    api.post<GoogleDriveImportJob>(`/deals/integrations/google-drive/import?accountId=${accountId}`, data),
+  getImportJob: (jobId: string) =>
+    api.get<GoogleDriveImportJob>(`/deals/integrations/google-drive/import/${jobId}`),
 }

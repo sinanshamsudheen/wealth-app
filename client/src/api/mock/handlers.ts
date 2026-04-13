@@ -22,9 +22,13 @@ import {
   MOCK_DOCUMENTS,
   MOCK_REVIEWS,
   MOCK_SHARES,
+  MOCK_EMAIL_ACCOUNTS,
+  MOCK_SYNCED_EMAILS,
+  MOCK_GOOGLE_DRIVE_ACCOUNTS,
+  MOCK_DRIVE_FOLDERS,
 } from './data/deals'
 import type { OrgProfile, OrgBranding, OrgPreferences, InviteUserRequest, ModuleRoleAssignment } from '@/modules/admin/types'
-import type { InvestmentType, DocumentTemplate, Mandate, Opportunity, AssetManager } from '@/modules/deals/types'
+import type { InvestmentType, DocumentTemplate, Mandate, Opportunity, AssetManager, EmailAccount, SyncedEmail, GoogleDriveAccount, GoogleDriveImportJob } from '@/modules/deals/types'
 import type { WorkspaceDocument, DocumentReview, DocumentShare } from './data/deals'
 
 const dynamicRuns = new Map<string, AgentRunResponse>()
@@ -41,6 +45,9 @@ const dashboardSummary = { ...MOCK_DASHBOARD_SUMMARY }
 const documents = [...MOCK_DOCUMENTS]
 const reviews = [...MOCK_REVIEWS]
 const shares = [...MOCK_SHARES]
+const emailAccounts = [...MOCK_EMAIL_ACCOUNTS]
+const syncedEmails = [...MOCK_SYNCED_EMAILS]
+const googleDriveAccounts = [...MOCK_GOOGLE_DRIVE_ACCOUNTS]
 
 // Admin mutable state
 const orgProfile = { ...MOCK_ORG_PROFILE }
@@ -844,5 +851,202 @@ export const handlers = [
     }))
     shares.push(...newShares)
     return HttpResponse.json(newShares, { status: 201 })
+  }),
+
+  // ── Deals: Email Accounts ──────────────────────────────────────────
+
+  http.get('/api/deals/email/accounts', async () => {
+    await delay(300)
+    return HttpResponse.json(emailAccounts)
+  }),
+
+  http.post('/api/deals/email/accounts', async ({ request }) => {
+    await delay(400)
+    const body = await request.json() as { provider?: string; emailAddress: string }
+    const now = new Date().toISOString()
+    const newAccount: EmailAccount = {
+      id: `email-acc-${Date.now().toString(36)}`,
+      userId: 'user-raoof',
+      provider: body.provider || 'gmail',
+      emailAddress: body.emailAddress,
+      status: 'connected',
+      lastSyncedAt: null,
+      syncLabels: ['INBOX'],
+      createdAt: now,
+      updatedAt: now,
+    }
+    emailAccounts.push(newAccount)
+    return HttpResponse.json(newAccount, { status: 201 })
+  }),
+
+  http.delete('/api/deals/email/accounts/:id', async ({ params }) => {
+    await delay(300)
+    const { id } = params as { id: string }
+    const idx = emailAccounts.findIndex(a => a.id === id)
+    if (idx === -1) return HttpResponse.json({ error: 'Email account not found' }, { status: 404 })
+    emailAccounts.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.post('/api/deals/email/accounts/:id/sync', async ({ params }) => {
+    await delay(500)
+    const { id } = params as { id: string }
+    const account = emailAccounts.find(a => a.id === id)
+    if (!account) return HttpResponse.json({ error: 'Email account not found' }, { status: 404 })
+    account.lastSyncedAt = new Date().toISOString()
+    account.updatedAt = new Date().toISOString()
+    return HttpResponse.json(account)
+  }),
+
+  // ── Deals: Synced Emails ───────────────────────────────────────────
+
+  http.get('/api/deals/emails', async ({ request }) => {
+    await delay(300)
+    const url = new URL(request.url)
+    const accountId = url.searchParams.get('accountId')
+    const importStatus = url.searchParams.get('importStatus')
+    const search = url.searchParams.get('search')
+    let result: SyncedEmail[] = syncedEmails
+    if (accountId) {
+      result = result.filter(e => e.emailAccountId === accountId)
+    }
+    if (importStatus) {
+      result = result.filter(e => e.importStatus === importStatus)
+    }
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(e =>
+        (e.subject?.toLowerCase().includes(q)) ||
+        (e.fromName?.toLowerCase().includes(q)) ||
+        (e.fromAddress?.toLowerCase().includes(q))
+      )
+    }
+    return HttpResponse.json(result)
+  }),
+
+  http.get('/api/deals/emails/:id', async ({ params }) => {
+    await delay(300)
+    const { id } = params as { id: string }
+    const email = syncedEmails.find(e => e.id === id)
+    if (!email) return HttpResponse.json({ error: 'Email not found' }, { status: 404 })
+    return HttpResponse.json(email)
+  }),
+
+  http.post('/api/deals/emails/:id/import', async ({ params, request }) => {
+    await delay(500)
+    const { id } = params as { id: string }
+    const body = await request.json() as { investmentTypeId: string }
+    const emailIdx = syncedEmails.findIndex(e => e.id === id)
+    if (emailIdx === -1) return HttpResponse.json({ error: 'Email not found' }, { status: 404 })
+    const email = syncedEmails[emailIdx]
+    const investmentType = MOCK_INVESTMENT_TYPES.find(t => t.id === body.investmentTypeId)
+    const now = new Date().toISOString()
+    const newOpp: Opportunity = {
+      id: `opp-${Date.now().toString(36)}`,
+      name: email.subject || 'Imported Opportunity',
+      investmentTypeId: body.investmentTypeId,
+      investmentTypeName: investmentType?.name || '',
+      pipelineStatus: 'new',
+      assetManagerId: '',
+      assetManagerName: email.fromName || '',
+      assignedTo: 'user-raoof',
+      snapshotData: {},
+      snapshotCitations: {},
+      sourceType: 'email',
+      mandateFits: [],
+      createdBy: 'user-raoof',
+      createdAt: now,
+      updatedAt: now,
+    }
+    opportunities.push(newOpp)
+    syncedEmails[emailIdx] = { ...email, importStatus: 'imported', opportunityId: newOpp.id }
+    return HttpResponse.json(newOpp, { status: 201 })
+  }),
+
+  http.put('/api/deals/emails/:id/ignore', async ({ params }) => {
+    await delay(300)
+    const { id } = params as { id: string }
+    const idx = syncedEmails.findIndex(e => e.id === id)
+    if (idx === -1) return HttpResponse.json({ error: 'Email not found' }, { status: 404 })
+    syncedEmails[idx] = { ...syncedEmails[idx], importStatus: 'ignored' }
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // ── Deals: Google Drive ────────────────────────────────────────────
+
+  http.get('/api/deals/integrations/google-drive', async () => {
+    await delay(300)
+    return HttpResponse.json(googleDriveAccounts)
+  }),
+
+  http.post('/api/deals/integrations/google-drive', async ({ request }) => {
+    await delay(400)
+    const body = await request.json() as { emailAddress?: string }
+    const now = new Date().toISOString()
+    const newAccount: GoogleDriveAccount = {
+      id: `gdrive-acc-${Date.now().toString(36)}`,
+      userId: 'user-raoof',
+      emailAddress: body.emailAddress || null,
+      status: 'connected',
+      createdAt: now,
+      updatedAt: now,
+    }
+    googleDriveAccounts.push(newAccount)
+    return HttpResponse.json(newAccount, { status: 201 })
+  }),
+
+  http.delete('/api/deals/integrations/google-drive/:id', async ({ params }) => {
+    await delay(300)
+    const { id } = params as { id: string }
+    const idx = googleDriveAccounts.findIndex(a => a.id === id)
+    if (idx === -1) return HttpResponse.json({ error: 'Google Drive account not found' }, { status: 404 })
+    googleDriveAccounts.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get('/api/deals/integrations/google-drive/browse', async () => {
+    await delay(300)
+    return HttpResponse.json({ folders: MOCK_DRIVE_FOLDERS })
+  }),
+
+  http.post('/api/deals/integrations/google-drive/import', async ({ request }) => {
+    await delay(500)
+    const url = new URL(request.url)
+    const accountId = url.searchParams.get('accountId') || ''
+    const body = await request.json() as { folderIds: string[] }
+    const now = new Date().toISOString()
+    const job: GoogleDriveImportJob = {
+      id: `import-job-${Date.now().toString(36)}`,
+      accountId,
+      folderPaths: body.folderIds,
+      status: 'processing',
+      totalFiles: 12,
+      processedFiles: 0,
+      opportunitiesCreated: 0,
+      errorLog: null,
+      startedAt: now,
+      completedAt: null,
+      createdAt: now,
+    }
+    return HttpResponse.json(job, { status: 201 })
+  }),
+
+  http.get('/api/deals/integrations/google-drive/import/:jobId', async () => {
+    await delay(300)
+    const now = new Date().toISOString()
+    const job: GoogleDriveImportJob = {
+      id: 'import-job-mock',
+      accountId: 'gdrive-acc-1',
+      folderPaths: ['/Deal Documents 2026'],
+      status: 'completed',
+      totalFiles: 12,
+      processedFiles: 12,
+      opportunitiesCreated: 3,
+      errorLog: null,
+      startedAt: '2026-04-12T10:00:00Z',
+      completedAt: now,
+      createdAt: '2026-04-12T10:00:00Z',
+    }
+    return HttpResponse.json(job)
   }),
 ]
