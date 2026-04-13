@@ -22,6 +22,7 @@ import { OpportunityListPage } from '@/modules/deals/pages/OpportunityListPage'
 import { SettingsPage as DealsSettingsPage } from '@/modules/deals/pages/SettingsPage'
 import { MandateListPage } from '@/modules/deals/pages/MandateListPage'
 import { MandateDetailPage } from '@/modules/deals/pages/MandateDetailPage'
+import { NewsPage } from '@/modules/deals/pages/NewsPage'
 import { CompanyProfilePage } from '@/modules/admin/pages/CompanyProfilePage'
 import { BrandingPage } from '@/modules/admin/pages/BrandingPage'
 import { UsersPage } from '@/modules/admin/pages/UsersPage'
@@ -90,6 +91,7 @@ function App() {
             <Route path="mandates" element={<MandateListPage />} />
             <Route path="mandates/:mandateId" element={<MandateDetailPage />} />
             <Route path="opportunities" element={<OpportunityListPage />} />
+            <Route path="news" element={<NewsPage />} />
             <Route path="settings" element={<DealsSettingsPage />} />
           </Route>
 
