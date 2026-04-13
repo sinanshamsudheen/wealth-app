@@ -277,3 +277,107 @@ class DocumentShare(Base, TenantMixin):
     shared_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     permission: Mapped[str] = mapped_column(String(20), server_default="comment", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class EmailAccount(Base, TenantMixin, TimestampMixin):
+    __tablename__ = "email_accounts"
+    __table_args__ = {"schema": "deals"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    provider: Mapped[str] = mapped_column(String(20), server_default="gmail", nullable=False)
+    email_address: Mapped[str] = mapped_column(String(255), nullable=False)
+    access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sync_labels: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), server_default="connected", nullable=False)
+
+
+class SyncedEmail(Base, TenantMixin):
+    __tablename__ = "emails"
+    __table_args__ = (
+        Index("ix_emails_tenant_account", "tenant_id", "email_account_id"),
+        Index("ix_emails_tenant_import_status", "tenant_id", "import_status"),
+        {"schema": "deals"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email_account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("deals.email_accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    gmail_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    from_address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    from_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    subject: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    attachment_count: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    import_status: Mapped[str] = mapped_column(String(20), server_default="new", nullable=False)
+    opportunity_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    attachments: Mapped[list["EmailAttachment"]] = relationship(
+        back_populates="email", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class EmailAttachment(Base):
+    __tablename__ = "email_attachments"
+    __table_args__ = {"schema": "deals"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("deals.emails.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    file_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    email: Mapped["SyncedEmail"] = relationship(back_populates="attachments")
+
+
+class GoogleDriveAccount(Base, TenantMixin, TimestampMixin):
+    __tablename__ = "google_drive_accounts"
+    __table_args__ = {"schema": "deals"}
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    email_address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), server_default="connected", nullable=False)
+
+
+class GoogleDriveImportJob(Base, TenantMixin):
+    __tablename__ = "google_drive_import_jobs"
+    __table_args__ = (
+        Index("ix_google_drive_import_jobs_tenant_status", "tenant_id", "status"),
+        {"schema": "deals"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    account_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("deals.google_drive_accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    folder_paths: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), server_default="pending", nullable=False)
+    total_files: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    processed_files: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    opportunities_created: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    error_log: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
