@@ -28,10 +28,11 @@ import {
   MOCK_DRIVE_FOLDERS,
   MOCK_SOURCE_FILES,
   MOCK_TEAM_MEMBERS,
+  MOCK_APPROVALS,
 } from './data/deals'
 import type { OrgProfile, OrgBranding, OrgPreferences, InviteUserRequest, ModuleRoleAssignment } from '@/modules/admin/types'
 import type { InvestmentType, DocumentTemplate, Mandate, Opportunity, AssetManager, EmailAccount, SyncedEmail, GoogleDriveAccount, GoogleDriveImportJob } from '@/modules/deals/types'
-import type { WorkspaceDocument, DocumentReview, DocumentShare } from './data/deals'
+import type { WorkspaceDocument, DocumentReview, DocumentShare, MockApprovalRequest } from './data/deals'
 
 const dynamicRuns = new Map<string, AgentRunResponse>()
 const runTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -47,6 +48,7 @@ const dashboardSummary = { ...MOCK_DASHBOARD_SUMMARY }
 const documents = [...MOCK_DOCUMENTS]
 const reviews = [...MOCK_REVIEWS]
 const shares = [...MOCK_SHARES]
+const approvals = [...MOCK_APPROVALS]
 const emailAccounts = [...MOCK_EMAIL_ACCOUNTS]
 const syncedEmails = [...MOCK_SYNCED_EMAILS]
 const googleDriveAccounts = [...MOCK_GOOGLE_DRIVE_ACCOUNTS]
@@ -832,6 +834,72 @@ export const handlers = [
       documents[docIdx].updatedAt = now
     }
     return HttpResponse.json(reviews[idx])
+  }),
+
+  // ── Deals: Approvals (Opportunity-Level) ─────────────────────────────
+
+  http.get('/api/deals/opportunities/:oppId/approvals', async ({ params }) => {
+    await delay(300)
+    const { oppId } = params as { oppId: string }
+    const result = approvals.filter(a => a.opportunityId === oppId)
+    return HttpResponse.json(result)
+  }),
+
+  http.post('/api/deals/opportunities/:oppId/approvals', async ({ params, request }) => {
+    await delay(400)
+    const { oppId } = params as { oppId: string }
+    const body = await request.json() as {
+      stage: string
+      reviewerIds: string[]
+      documentIds: string[]
+    }
+    const now = new Date().toISOString()
+    const created: MockApprovalRequest[] = body.reviewerIds.map(reviewerId => {
+      const approval: MockApprovalRequest = {
+        id: `approval-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        opportunityId: oppId as string,
+        stage: body.stage,
+        reviewerId,
+        requestedBy: 'user-raoof',
+        status: 'pending',
+        rationale: null,
+        documentIds: body.documentIds,
+        requestedAt: now,
+        reviewedAt: null,
+      }
+      approvals.push(approval)
+      return approval
+    })
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.put('/api/deals/opportunities/:oppId/approvals/:approvalId', async ({ params, request }) => {
+    await delay(400)
+    const { approvalId } = params as { approvalId: string }
+    const body = await request.json() as { status: string; rationale?: string }
+    const idx = approvals.findIndex(a => a.id === approvalId)
+    if (idx === -1) return HttpResponse.json({ error: 'Not found' }, { status: 404 })
+    const now = new Date().toISOString()
+    approvals[idx] = {
+      ...approvals[idx],
+      status: body.status as 'approved' | 'changes_requested',
+      rationale: body.rationale ?? null,
+      reviewedAt: now,
+    }
+    // If approved, advance opportunity's approvalStage
+    if (body.status === 'approved') {
+      const oppIdx = opportunities.findIndex(o => o.id === approvals[idx].opportunityId)
+      if (oppIdx !== -1) {
+        const opp = opportunities[oppIdx] as unknown as Record<string, unknown>
+        const currentStage = opp.approvalStage as string
+        if (currentStage === 'pre_screening') {
+          opp.approvalStage = 'ic_memo'
+        } else if (currentStage === 'ic_memo') {
+          opp.approvalStage = 'approved'
+        }
+      }
+    }
+    return HttpResponse.json(approvals[idx])
   }),
 
   // ── Deals: Shares ───────────────────────────────────────────────────

@@ -959,6 +959,50 @@ export interface TeamMember {
   email: string
 }
 
+// ── Approval Requests (Opportunity-Level) ───────────────────────────
+
+export interface MockApprovalRequest {
+  id: string
+  opportunityId: string
+  stage: string
+  reviewerId: string
+  requestedBy: string
+  status: 'pending' | 'approved' | 'changes_requested'
+  rationale: string | null
+  documentIds: string[]
+  requestedAt: string
+  reviewedAt: string | null
+}
+
+export const MOCK_APPROVALS: MockApprovalRequest[] = [
+  {
+    id: 'approval-1',
+    opportunityId: 'opp-abingworth-viii',
+    stage: 'pre_screening',
+    reviewerId: 'user-usman',
+    requestedBy: 'user-pine',
+    status: 'pending',
+    rationale: null,
+    documentIds: ['doc-1', 'doc-2'],
+    requestedAt: '2026-04-10T10:00:00Z',
+    reviewedAt: null,
+  },
+  {
+    id: 'approval-2',
+    opportunityId: 'opp-brep-x',
+    stage: 'pre_screening',
+    reviewerId: 'user-pine',
+    requestedBy: 'user-raoof',
+    status: 'approved',
+    rationale: 'Strong sponsor, attractive co-invest terms. Proceed to IC.',
+    documentIds: [],
+    requestedAt: '2026-03-20T09:00:00Z',
+    reviewedAt: '2026-03-22T14:00:00Z',
+  },
+]
+
+// ── Team Members ─────────────────────────────────────────────────────
+
 export const MOCK_TEAM_MEMBERS: TeamMember[] = [
   { id: 'user-raoof', name: 'Raoof Naushad', role: 'analyst', email: 'raoof@invictus.ai' },
   { id: 'user-usman', name: 'Usman Khan', role: 'manager', email: 'usman@invictus.ai' },
