@@ -7,6 +7,9 @@ import type {
   MandateStatus,
   Opportunity,
   PipelineStatus,
+  AssetManager,
+  NewsItem,
+  DashboardSummary,
 } from './types'
 
 interface DealsState {
@@ -29,6 +32,17 @@ interface DealsState {
   fetchMandates: (status?: MandateStatus) => Promise<void>
   fetchOpportunities: (filters?: { pipelineStatus?: PipelineStatus; assignedTo?: string }) => Promise<void>
   setPipelineFilter: (status: PipelineStatus | null) => void
+
+  assetManagers: AssetManager[]
+  loadingAssetManagers: boolean
+  newsItems: NewsItem[]
+  loadingNews: boolean
+  dashboardSummary: DashboardSummary | null
+  loadingDashboard: boolean
+
+  fetchAssetManagers: (type?: string) => Promise<void>
+  fetchNews: (category?: string) => Promise<void>
+  fetchDashboardSummary: () => Promise<void>
 }
 
 export const useDealsStore = create<DealsState>((set) => ({
@@ -84,4 +98,41 @@ export const useDealsStore = create<DealsState>((set) => ({
   },
 
   setPipelineFilter: (status) => set({ pipelineFilter: status }),
+
+  assetManagers: [],
+  loadingAssetManagers: false,
+  newsItems: [],
+  loadingNews: false,
+  dashboardSummary: null,
+  loadingDashboard: false,
+
+  fetchAssetManagers: async (type?: string) => {
+    set({ loadingAssetManagers: true })
+    try {
+      const assetManagers = await dealsApi.listAssetManagers(type)
+      set({ assetManagers })
+    } finally {
+      set({ loadingAssetManagers: false })
+    }
+  },
+
+  fetchNews: async (category?: string) => {
+    set({ loadingNews: true })
+    try {
+      const newsItems = await dealsApi.listNews(category)
+      set({ newsItems })
+    } finally {
+      set({ loadingNews: false })
+    }
+  },
+
+  fetchDashboardSummary: async () => {
+    set({ loadingDashboard: true })
+    try {
+      const dashboardSummary = await dealsApi.getDashboardSummary()
+      set({ dashboardSummary })
+    } finally {
+      set({ loadingDashboard: false })
+    }
+  },
 }))

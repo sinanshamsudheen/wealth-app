@@ -112,3 +112,58 @@ export interface Opportunity {
   createdAt: string
   updatedAt: string
 }
+
+// ── Asset Managers ──────────────────────────────────────────────────
+
+export interface AssetManager {
+  id: string
+  name: string
+  type: string | null
+  location: string | null
+  description: string | null
+  fundInfo: Record<string, string>
+  firmInfo: Record<string, string>
+  strategy: Record<string, string>
+  characteristics: Record<string, string>
+  createdByType: 'system' | 'manual'
+  createdAt: string
+  updatedAt: string
+}
+
+// ── News ────────────────────────────────────────────────────────────
+
+export type NewsCategory = 'market' | 'sector' | 'asset_manager' | 'regulatory'
+
+export interface NewsItem {
+  id: string
+  headline: string
+  summary: string | null
+  fullContent: string | null
+  category: NewsCategory | null
+  sourceUrl: string | null
+  linkedOpportunityIds: string[]
+  generatedAt: string
+  createdAt: string
+}
+
+// ── Dashboard ───────────────────────────────────────────────────────
+
+export interface PipelineStatusCount {
+  status: PipelineStatus
+  count: number
+}
+
+export interface MandateAllocationSummary {
+  mandateId: string
+  mandateName: string
+  targetAllocation: number | null
+  currentAllocation: number
+  opportunityCount: number
+}
+
+export interface DashboardSummary {
+  pipelineCounts: PipelineStatusCount[]
+  totalOpportunities: number
+  mandateAllocations: MandateAllocationSummary[]
+  recentNews: NewsItem[]
+}

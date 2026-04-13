@@ -6,6 +6,9 @@ import type {
   MandateStatus,
   Opportunity,
   PipelineStatus,
+  AssetManager,
+  NewsItem,
+  DashboardSummary,
 } from './types'
 
 export const dealsApi = {
@@ -52,4 +55,25 @@ export const dealsApi = {
   updateOpportunity: (id: string, data: Partial<Opportunity>) =>
     api.put<Opportunity>(`/deals/opportunities/${id}`, data),
   deleteOpportunity: (id: string) => api.delete<void>(`/deals/opportunities/${id}`),
+
+  // Asset Managers
+  listAssetManagers: (type?: string) => {
+    const params = type ? `?type=${type}` : ''
+    return api.get<AssetManager[]>(`/deals/asset-managers${params}`)
+  },
+  getAssetManager: (id: string) => api.get<AssetManager>(`/deals/asset-managers/${id}`),
+  createAssetManager: (data: { name: string; type?: string; location?: string; description?: string; fundInfo?: Record<string, string>; firmInfo?: Record<string, string>; strategy?: Record<string, string> }) =>
+    api.post<AssetManager>('/deals/asset-managers', data),
+  updateAssetManager: (id: string, data: Partial<AssetManager>) =>
+    api.put<AssetManager>(`/deals/asset-managers/${id}`, data),
+  deleteAssetManager: (id: string) => api.delete<void>(`/deals/asset-managers/${id}`),
+
+  // News
+  listNews: (category?: string) => {
+    const params = category ? `?category=${category}` : ''
+    return api.get<NewsItem[]>(`/deals/news${params}`)
+  },
+
+  // Dashboard
+  getDashboardSummary: () => api.get<DashboardSummary>('/deals/dashboard/summary'),
 }
