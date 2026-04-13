@@ -13,7 +13,7 @@ import { CreateDocumentDialog } from '../components/workspace/CreateDocumentDial
 import { ValidationDialog } from '../components/workspace/ValidationDialog'
 import { ShareDialog } from '../components/workspace/ShareDialog'
 import { ReviewBanner } from '../components/workspace/ReviewBanner'
-import type { WorkspaceTab } from '../types'
+import type { WorkspaceTab, ApprovalStage } from '../types'
 import { dealsApi } from '../api'
 
 export function OpportunityWorkspacePage() {
@@ -136,13 +136,37 @@ export function OpportunityWorkspacePage() {
         onBack={() => navigate('/home/deals/opportunities')}
         onValidate={() => setShowValidation(true)}
         onShare={() => setShowShare(true)}
+        onStageChange={async (stage: ApprovalStage) => {
+          store.advanceApprovalStage(stage)
+          try {
+            await dealsApi.updateOpportunity(opp.id, { approvalStage: stage } as Record<string, unknown>)
+          } catch {
+            // revert on error
+            store.advanceApprovalStage(opp.approvalStage)
+          }
+        }}
       />
 
       {/* Review Banner */}
       <ReviewBanner
         opportunityId={opp.id}
-        documents={store.workspaceDocuments}
+        approvals={store.workspaceApprovals}
         currentUserId="user-raoof"
+        onApprovalUpdate={(updatedApproval) => {
+          useDealsStore.setState({
+            workspaceApprovals: store.workspaceApprovals.map(a =>
+              a.id === updatedApproval.id ? updatedApproval : a
+            ),
+          })
+          if (updatedApproval.status === 'approved') {
+            const nextStage =
+              opp.approvalStage === 'pre_screening' ? 'due_diligence' as const
+              : opp.approvalStage === 'due_diligence' ? 'ic_review' as const
+              : opp.approvalStage === 'ic_review' ? 'approved' as const
+              : opp.approvalStage
+            store.advanceApprovalStage(nextStage)
+          }
+        }}
       />
 
       {/* Body: Sidebar + Main Content — sidebar and tabs are sticky, only content scrolls */}
@@ -208,8 +232,16 @@ export function OpportunityWorkspacePage() {
       )}
       {showValidation && (
         <ValidationDialog
+          opportunityId={opp.id}
+          currentStage={opp.approvalStage}
           documents={store.workspaceDocuments}
           onClose={() => setShowValidation(false)}
+          onSubmitted={(newApprovals) => {
+            useDealsStore.setState({
+              workspaceApprovals: [...store.workspaceApprovals, ...newApprovals],
+            })
+            setShowValidation(false)
+          }}
         />
       )}
       {showShare && activeDocument && (
