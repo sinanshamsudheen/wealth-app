@@ -18,6 +18,7 @@ import type {
   GoogleDriveAccount,
   DriveFolder,
   GoogleDriveImportJob,
+  TeamMember,
 } from './types'
 
 export const dealsApi = {
@@ -101,6 +102,9 @@ export const dealsApi = {
   // Source Files
   listSourceFiles: (opportunityId: string) =>
     api.get<SourceFile[]>(`/deals/opportunities/${opportunityId}/files`),
+
+  // Team Members
+  listTeamMembers: () => api.get<TeamMember[]>('/deals/team-members'),
 
   // Reviews
   listReviews: (filters?: { reviewerId?: string; requestedBy?: string; status?: string }) => {

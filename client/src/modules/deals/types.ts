@@ -309,6 +309,15 @@ export interface GoogleDriveImportJob {
   createdAt: string
 }
 
+// ── Team Members ───────────────────────────────────────────────────
+
+export interface TeamMember {
+  id: string
+  name: string
+  role: string
+  email: string
+}
+
 // ── Workspace ───────────────────────────────────────────────────────
 
 export type WorkspaceTabType = 'snapshot' | 'document' | 'note' | 'source_file'
