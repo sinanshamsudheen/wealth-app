@@ -19,6 +19,8 @@ import type {
   DriveFolder,
   GoogleDriveImportJob,
   TeamMember,
+  ApprovalRequest,
+  ApprovalStage,
 } from './types'
 
 export const dealsApi = {
@@ -119,6 +121,21 @@ export const dealsApi = {
     api.post<DocumentReview>('/deals/reviews', data),
   updateReview: (reviewId: string, data: { status: string; rationale?: string }) =>
     api.put<DocumentReview>(`/deals/reviews/${reviewId}`, data),
+
+  // Approvals (opportunity-level)
+  listApprovals: (opportunityId: string) =>
+    api.get<ApprovalRequest[]>(`/deals/opportunities/${opportunityId}/approvals`),
+  submitForApproval: (opportunityId: string, data: {
+    stage: ApprovalStage
+    reviewerIds: string[]
+    documentIds: string[]
+  }) =>
+    api.post<ApprovalRequest[]>(`/deals/opportunities/${opportunityId}/approvals`, data),
+  updateApproval: (opportunityId: string, approvalId: string, data: {
+    status: string
+    rationale?: string
+  }) =>
+    api.put<ApprovalRequest>(`/deals/opportunities/${opportunityId}/approvals/${approvalId}`, data),
 
   // Shares
   listShares: (docId: string) => api.get<DocumentShare[]>(`/deals/documents/${docId}/shares`),

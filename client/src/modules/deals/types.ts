@@ -87,6 +87,8 @@ export interface Mandate {
 
 export type PipelineStatus = 'new' | 'active' | 'archived' | 'ignored'
 
+export type ApprovalStage = 'new' | 'pre_screening' | 'ic_memo' | 'approved' | 'rejected'
+
 export type FitScore = 'strong' | 'moderate' | 'weak'
 
 export interface MandateFit {
@@ -110,6 +112,7 @@ export interface Opportunity {
   mandateFits: MandateFit[]
   strategyFit?: 'strong' | 'moderate' | 'limited' | null
   recommendation?: 'pass' | 'approve' | 'watch' | null
+  approvalStage: ApprovalStage
   createdBy: string
   createdAt: string
   updatedAt: string
@@ -209,6 +212,19 @@ export interface DocumentReview {
   requestedAt: string
   reviewedAt: string | null
   documents: ReviewDocumentItem[]
+}
+
+export interface ApprovalRequest {
+  id: string
+  opportunityId: string
+  stage: ApprovalStage
+  reviewerId: string
+  requestedBy: string
+  status: 'pending' | 'approved' | 'changes_requested'
+  rationale: string | null
+  documentIds: string[]
+  requestedAt: string
+  reviewedAt: string | null
 }
 
 // ── Document Shares ─────────────────────────────────────────────────
