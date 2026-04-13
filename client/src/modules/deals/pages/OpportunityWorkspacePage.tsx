@@ -124,7 +124,7 @@ export function OpportunityWorkspacePage() {
     : null
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col -m-6 h-[calc(100vh-3rem)] overflow-hidden">
       {/* Header — sticky, never scrolls */}
       <WorkspaceHeader
         opportunity={opp}

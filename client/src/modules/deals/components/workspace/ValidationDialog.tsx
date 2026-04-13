@@ -62,7 +62,7 @@ function StageProgress({ currentStage }: { currentStage: ApprovalStage }) {
   const currentIdx = stages.findIndex(s => s.key === currentStage)
 
   return (
-    <div className="flex items-center justify-center gap-2 py-3">
+    <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg border bg-muted/30">
       {stages.map((stage, i) => {
         const isCompleted = i < currentIdx
         const isCurrent = stage.key === currentStage
