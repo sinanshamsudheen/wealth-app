@@ -2,14 +2,24 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from datetime import datetime, timezone
+
 from app.modules.deals import repository
-from app.modules.deals.models import AssetManager
+from app.modules.deals.models import AssetManager, Document, DocumentReview, DocumentShare
 from app.modules.deals.schemas import (
     AssetManagerCreate,
     AssetManagerResponse,
     AssetManagerUpdate,
     DashboardSummaryResponse,
+    DocumentCreate,
+    DocumentResponse,
+    DocumentReviewCreate,
+    DocumentReviewResponse,
+    DocumentReviewUpdate,
+    DocumentShareCreate,
+    DocumentShareResponse,
     DocumentTemplateResponse,
+    DocumentUpdate,
     InvestmentTypeCreate,
     InvestmentTypeResponse,
     InvestmentTypeUpdate,
@@ -23,6 +33,8 @@ from app.modules.deals.schemas import (
     OpportunityResponse,
     OpportunityUpdate,
     PipelineStatusCount,
+    ReviewDocumentItem,
+    SourceFileResponse,
 )
 from app.shared.exceptions import forbidden, not_found
 
@@ -488,3 +500,259 @@ async def get_dashboard_summary(
         mandateAllocations=mandate_allocations,
         recentNews=recent_news,
     )
+
+
+# --- Document helpers ---
+def _document_to_response(doc) -> DocumentResponse:
+    return DocumentResponse(
+        id=str(doc.id),
+        opportunityId=str(doc.opportunity_id),
+        templateId=str(doc.template_id) if doc.template_id else None,
+        name=doc.name,
+        documentType=doc.document_type,
+        content=doc.content,
+        status=doc.status,
+        version=doc.version,
+        createdBy=str(doc.created_by) if doc.created_by else None,
+        createdAt=doc.created_at,
+        updatedAt=doc.updated_at,
+    )
+
+
+def _review_to_response(review) -> DocumentReviewResponse:
+    documents = [
+        ReviewDocumentItem(
+            documentId=str(item.document_id),
+            documentName=item.document.name,
+            documentType=item.document.document_type,
+        )
+        for item in review.items
+    ]
+    return DocumentReviewResponse(
+        id=str(review.id),
+        reviewerId=str(review.reviewer_id),
+        requestedBy=str(review.requested_by),
+        status=review.status,
+        rationale=review.rationale,
+        rationaleGenerated=review.rationale_generated,
+        requestedAt=review.requested_at,
+        reviewedAt=review.reviewed_at,
+        documents=documents,
+    )
+
+
+def _share_to_response(share) -> DocumentShareResponse:
+    return DocumentShareResponse(
+        id=str(share.id),
+        documentId=str(share.document_id),
+        sharedWith=str(share.shared_with),
+        sharedBy=str(share.shared_by),
+        permission=share.permission,
+        createdAt=share.created_at,
+    )
+
+
+def _source_file_to_response(sf) -> SourceFileResponse:
+    return SourceFileResponse(
+        id=str(sf.id),
+        opportunityId=str(sf.opportunity_id),
+        fileName=sf.file_name,
+        fileUrl=sf.file_url,
+        fileType=sf.file_type,
+        fileSize=sf.file_size,
+        processed=sf.processed,
+        sourceOrigin=sf.source_origin,
+        createdAt=sf.created_at,
+    )
+
+
+# --- Documents ---
+async def list_documents(
+    db: AsyncSession, tenant_id: uuid.UUID, opportunity_id: uuid.UUID
+) -> list[DocumentResponse]:
+    docs = await repository.list_documents(db, tenant_id, opportunity_id)
+    return [_document_to_response(d) for d in docs]
+
+
+async def get_document(
+    db: AsyncSession, tenant_id: uuid.UUID, doc_id: uuid.UUID
+) -> DocumentResponse:
+    doc = await repository.get_document(db, tenant_id, doc_id)
+    if not doc:
+        raise not_found("Document not found")
+    return _document_to_response(doc)
+
+
+async def create_document(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    opportunity_id: uuid.UUID,
+    user_id: uuid.UUID,
+    data: DocumentCreate,
+) -> DocumentResponse:
+    doc = Document(
+        id=uuid.uuid4(),
+        tenant_id=tenant_id,
+        opportunity_id=opportunity_id,
+        name=data.name,
+        document_type=data.documentType,
+        template_id=uuid.UUID(data.templateId) if data.templateId else None,
+        content=data.content,
+        created_by=user_id,
+    )
+    doc = await repository.create_document(db, doc)
+    return _document_to_response(doc)
+
+
+async def update_document(
+    db: AsyncSession, tenant_id: uuid.UUID, doc_id: uuid.UUID, data: DocumentUpdate
+) -> DocumentResponse:
+    doc = await repository.get_document(db, tenant_id, doc_id)
+    if not doc:
+        raise not_found("Document not found")
+    update_data = {}
+    if data.name is not None:
+        update_data["name"] = data.name
+    if data.content is not None:
+        update_data["content"] = data.content
+    if data.status is not None:
+        update_data["status"] = data.status
+    doc = await repository.update_document(db, doc, update_data)
+    return _document_to_response(doc)
+
+
+async def delete_document(
+    db: AsyncSession, tenant_id: uuid.UUID, doc_id: uuid.UUID
+) -> bool:
+    doc = await repository.get_document(db, tenant_id, doc_id)
+    if not doc:
+        raise not_found("Document not found")
+    await repository.delete_document(db, doc)
+    return True
+
+
+# --- Document Reviews ---
+async def list_reviews(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    reviewer_id: uuid.UUID | None = None,
+    requested_by: uuid.UUID | None = None,
+    status: str | None = None,
+) -> list[DocumentReviewResponse]:
+    reviews = await repository.list_reviews(db, tenant_id, reviewer_id, requested_by, status)
+    return [_review_to_response(r) for r in reviews]
+
+
+async def get_review(
+    db: AsyncSession, tenant_id: uuid.UUID, review_id: uuid.UUID
+) -> DocumentReviewResponse:
+    review = await repository.get_review(db, tenant_id, review_id)
+    if not review:
+        raise not_found("Document review not found")
+    return _review_to_response(review)
+
+
+async def create_review(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    user_id: uuid.UUID,
+    data: DocumentReviewCreate,
+) -> DocumentReviewResponse:
+    document_ids = [uuid.UUID(did) for did in data.documentIds]
+
+    # Update document statuses to in_review
+    for doc_id in document_ids:
+        doc = await repository.get_document(db, tenant_id, doc_id)
+        if not doc:
+            raise not_found(f"Document {doc_id} not found")
+        await repository.update_document(db, doc, {"status": "in_review"})
+
+    review = DocumentReview(
+        id=uuid.uuid4(),
+        tenant_id=tenant_id,
+        reviewer_id=uuid.UUID(data.reviewerId),
+        requested_by=user_id,
+    )
+    review = await repository.create_review(db, review, document_ids)
+    return _review_to_response(review)
+
+
+async def update_review(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    review_id: uuid.UUID,
+    data: DocumentReviewUpdate,
+) -> DocumentReviewResponse:
+    review = await repository.get_review(db, tenant_id, review_id)
+    if not review:
+        raise not_found("Document review not found")
+
+    update_data: dict = {
+        "status": data.status,
+        "reviewed_at": datetime.now(timezone.utc),
+    }
+    if data.rationale is not None:
+        update_data["rationale"] = data.rationale
+
+    # Update document statuses based on review outcome
+    new_doc_status = "approved" if data.status == "approved" else "draft"
+    for item in review.items:
+        doc = await repository.get_document(db, tenant_id, item.document_id)
+        if doc:
+            await repository.update_document(db, doc, {"status": new_doc_status})
+
+    review = await repository.update_review(db, review, update_data)
+    return _review_to_response(review)
+
+
+# --- Document Shares ---
+async def list_shares(
+    db: AsyncSession, tenant_id: uuid.UUID, document_id: uuid.UUID
+) -> list[DocumentShareResponse]:
+    shares = await repository.list_shares(db, tenant_id, document_id)
+    return [_share_to_response(s) for s in shares]
+
+
+async def create_shares(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    document_id: uuid.UUID,
+    user_id: uuid.UUID,
+    data: DocumentShareCreate,
+) -> list[DocumentShareResponse]:
+    # Verify document exists
+    doc = await repository.get_document(db, tenant_id, document_id)
+    if not doc:
+        raise not_found("Document not found")
+
+    shares = []
+    for shared_with_id in data.sharedWith:
+        share = DocumentShare(
+            id=uuid.uuid4(),
+            tenant_id=tenant_id,
+            document_id=document_id,
+            shared_with=uuid.UUID(shared_with_id),
+            shared_by=user_id,
+            permission=data.permission,
+        )
+        share = await repository.create_share(db, share)
+        shares.append(share)
+    return [_share_to_response(s) for s in shares]
+
+
+async def delete_share(
+    db: AsyncSession, tenant_id: uuid.UUID, share_id: uuid.UUID
+) -> bool:
+    share = await repository.get_share(db, tenant_id, share_id)
+    if not share:
+        raise not_found("Document share not found")
+    await repository.delete_share(db, share)
+    return True
+
+
+# --- Source Files ---
+async def list_source_files(
+    db: AsyncSession, tenant_id: uuid.UUID, opportunity_id: uuid.UUID
+) -> list[SourceFileResponse]:
+    files = await repository.list_source_files(db, tenant_id, opportunity_id)
+    return [_source_file_to_response(f) for f in files]

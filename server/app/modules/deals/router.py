@@ -9,8 +9,16 @@ from app.modules.deals.schemas import (
     AssetManagerResponse,
     AssetManagerUpdate,
     DashboardSummaryResponse,
+    DocumentCreate,
+    DocumentResponse,
+    DocumentReviewCreate,
+    DocumentReviewResponse,
+    DocumentReviewUpdate,
+    DocumentShareCreate,
+    DocumentShareResponse,
     DocumentTemplateResponse,
     DocumentTemplateUpdate,
+    DocumentUpdate,
     InvestmentTypeCreate,
     InvestmentTypeResponse,
     InvestmentTypeUpdate,
@@ -21,6 +29,7 @@ from app.modules.deals.schemas import (
     OpportunityCreate,
     OpportunityResponse,
     OpportunityUpdate,
+    SourceFileResponse,
 )
 from app.shared.dependencies import CurrentUser, get_db_with_tenant, require_role
 from app.shared.schemas import SuccessResponse
@@ -29,6 +38,7 @@ router = APIRouter(prefix="/api/v1/deals", tags=["Deals"])
 
 # Dependency shortcuts
 DealsRead = Depends(require_role("deals", ["owner", "manager", "analyst"]))
+DealsManager = Depends(require_role("deals", ["owner", "manager"]))
 DealsOwner = Depends(require_role("deals", ["owner"]))
 
 
@@ -337,3 +347,183 @@ async def get_dashboard_summary(
 ):
     data = await service.get_dashboard_summary(db, user.tenant_id)
     return SuccessResponse(data=data)
+
+
+# --- Documents ---
+@router.get(
+    "/opportunities/{opp_id}/documents",
+    response_model=SuccessResponse[list[DocumentResponse]],
+)
+async def list_documents(
+    opp_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.list_documents(db, user.tenant_id, opp_id)
+    return SuccessResponse(data=data)
+
+
+@router.post(
+    "/opportunities/{opp_id}/documents",
+    response_model=SuccessResponse[DocumentResponse],
+    status_code=201,
+)
+async def create_document(
+    opp_id: uuid.UUID,
+    body: DocumentCreate,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.create_document(db, user.tenant_id, opp_id, user.id, body)
+    return SuccessResponse(data=data)
+
+
+@router.get(
+    "/opportunities/{opp_id}/documents/{doc_id}",
+    response_model=SuccessResponse[DocumentResponse],
+)
+async def get_document(
+    opp_id: uuid.UUID,
+    doc_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.get_document(db, user.tenant_id, doc_id)
+    return SuccessResponse(data=data)
+
+
+@router.put(
+    "/opportunities/{opp_id}/documents/{doc_id}",
+    response_model=SuccessResponse[DocumentResponse],
+)
+async def update_document(
+    opp_id: uuid.UUID,
+    doc_id: uuid.UUID,
+    body: DocumentUpdate,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.update_document(db, user.tenant_id, doc_id, body)
+    return SuccessResponse(data=data)
+
+
+@router.delete("/opportunities/{opp_id}/documents/{doc_id}", status_code=204)
+async def delete_document(
+    opp_id: uuid.UUID,
+    doc_id: uuid.UUID,
+    user: CurrentUser = DealsOwner,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    await service.delete_document(db, user.tenant_id, doc_id)
+    return Response(status_code=204)
+
+
+# --- Source Files ---
+@router.get(
+    "/opportunities/{opp_id}/files",
+    response_model=SuccessResponse[list[SourceFileResponse]],
+)
+async def list_source_files(
+    opp_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.list_source_files(db, user.tenant_id, opp_id)
+    return SuccessResponse(data=data)
+
+
+# --- Document Reviews ---
+@router.post(
+    "/reviews",
+    response_model=SuccessResponse[DocumentReviewResponse],
+    status_code=201,
+)
+async def create_review(
+    body: DocumentReviewCreate,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.create_review(db, user.tenant_id, user.id, body)
+    return SuccessResponse(data=data)
+
+
+@router.get(
+    "/reviews",
+    response_model=SuccessResponse[list[DocumentReviewResponse]],
+)
+async def list_reviews(
+    reviewer_id: uuid.UUID | None = Query(None, alias="reviewerId"),
+    requested_by: uuid.UUID | None = Query(None, alias="requestedBy"),
+    status: str | None = Query(None),
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.list_reviews(db, user.tenant_id, reviewer_id, requested_by, status)
+    return SuccessResponse(data=data)
+
+
+@router.get(
+    "/reviews/{review_id}",
+    response_model=SuccessResponse[DocumentReviewResponse],
+)
+async def get_review(
+    review_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.get_review(db, user.tenant_id, review_id)
+    return SuccessResponse(data=data)
+
+
+@router.put(
+    "/reviews/{review_id}",
+    response_model=SuccessResponse[DocumentReviewResponse],
+)
+async def update_review(
+    review_id: uuid.UUID,
+    body: DocumentReviewUpdate,
+    user: CurrentUser = DealsManager,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.update_review(db, user.tenant_id, review_id, body)
+    return SuccessResponse(data=data)
+
+
+# --- Document Shares ---
+@router.post(
+    "/documents/{doc_id}/share",
+    response_model=SuccessResponse[list[DocumentShareResponse]],
+    status_code=201,
+)
+async def create_shares(
+    doc_id: uuid.UUID,
+    body: DocumentShareCreate,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.create_shares(db, user.tenant_id, doc_id, user.id, body)
+    return SuccessResponse(data=data)
+
+
+@router.get(
+    "/documents/{doc_id}/shares",
+    response_model=SuccessResponse[list[DocumentShareResponse]],
+)
+async def list_shares(
+    doc_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.list_shares(db, user.tenant_id, doc_id)
+    return SuccessResponse(data=data)
+
+
+@router.delete("/documents/{doc_id}/shares/{share_id}", status_code=204)
+async def delete_share(
+    doc_id: uuid.UUID,
+    share_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    await service.delete_share(db, user.tenant_id, share_id)
+    return Response(status_code=204)

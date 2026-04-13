@@ -5,11 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.deals.models import (
     AssetManager,
+    Document,
+    DocumentReview,
+    DocumentReviewItem,
+    DocumentShare,
     DocumentTemplate,
     InvestmentType,
     Mandate,
     NewsItem,
     Opportunity,
+    SourceFile,
 )
 
 
@@ -331,3 +336,161 @@ async def get_mandate_allocation_summaries(
         .group_by(Mandate.id, Mandate.name, Mandate.target_allocation)
     )
     return list(result.all())
+
+
+# --- Documents ---
+async def list_documents(
+    db: AsyncSession, tenant_id: uuid.UUID, opportunity_id: uuid.UUID
+) -> list[Document]:
+    result = await db.execute(
+        select(Document)
+        .where(Document.tenant_id == tenant_id, Document.opportunity_id == opportunity_id)
+        .order_by(Document.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def get_document(
+    db: AsyncSession, tenant_id: uuid.UUID, doc_id: uuid.UUID
+) -> Document | None:
+    result = await db.execute(
+        select(Document).where(
+            Document.tenant_id == tenant_id, Document.id == doc_id
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_document(
+    db: AsyncSession, doc: Document
+) -> Document:
+    db.add(doc)
+    await db.flush()
+    return doc
+
+
+async def update_document(
+    db: AsyncSession, doc: Document, data: dict
+) -> Document:
+    for key, value in data.items():
+        if value is not None:
+            setattr(doc, key, value)
+    await db.flush()
+    return doc
+
+
+async def delete_document(
+    db: AsyncSession, doc: Document
+) -> Document:
+    await db.delete(doc)
+    await db.flush()
+    return doc
+
+
+# --- Document Reviews ---
+async def list_reviews(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    reviewer_id: uuid.UUID | None = None,
+    requested_by: uuid.UUID | None = None,
+    status: str | None = None,
+) -> list[DocumentReview]:
+    stmt = select(DocumentReview).where(DocumentReview.tenant_id == tenant_id)
+    if reviewer_id is not None:
+        stmt = stmt.where(DocumentReview.reviewer_id == reviewer_id)
+    if requested_by is not None:
+        stmt = stmt.where(DocumentReview.requested_by == requested_by)
+    if status is not None:
+        stmt = stmt.where(DocumentReview.status == status)
+    stmt = stmt.order_by(DocumentReview.requested_at.desc())
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_review(
+    db: AsyncSession, tenant_id: uuid.UUID, review_id: uuid.UUID
+) -> DocumentReview | None:
+    result = await db.execute(
+        select(DocumentReview).where(
+            DocumentReview.tenant_id == tenant_id, DocumentReview.id == review_id
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_review(
+    db: AsyncSession, review: DocumentReview, document_ids: list[uuid.UUID]
+) -> DocumentReview:
+    db.add(review)
+    await db.flush()
+    for doc_id in document_ids:
+        item = DocumentReviewItem(
+            id=uuid.uuid4(),
+            review_id=review.id,
+            document_id=doc_id,
+        )
+        db.add(item)
+    await db.flush()
+    await db.refresh(review)
+    return review
+
+
+async def update_review(
+    db: AsyncSession, review: DocumentReview, data: dict
+) -> DocumentReview:
+    for key, value in data.items():
+        if value is not None:
+            setattr(review, key, value)
+    await db.flush()
+    return review
+
+
+# --- Document Shares ---
+async def list_shares(
+    db: AsyncSession, tenant_id: uuid.UUID, document_id: uuid.UUID
+) -> list[DocumentShare]:
+    result = await db.execute(
+        select(DocumentShare)
+        .where(DocumentShare.tenant_id == tenant_id, DocumentShare.document_id == document_id)
+        .order_by(DocumentShare.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def create_share(
+    db: AsyncSession, share: DocumentShare
+) -> DocumentShare:
+    db.add(share)
+    await db.flush()
+    return share
+
+
+async def get_share(
+    db: AsyncSession, tenant_id: uuid.UUID, share_id: uuid.UUID
+) -> DocumentShare | None:
+    result = await db.execute(
+        select(DocumentShare).where(
+            DocumentShare.tenant_id == tenant_id, DocumentShare.id == share_id
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def delete_share(
+    db: AsyncSession, share: DocumentShare
+) -> DocumentShare:
+    await db.delete(share)
+    await db.flush()
+    return share
+
+
+# --- Source Files ---
+async def list_source_files(
+    db: AsyncSession, tenant_id: uuid.UUID, opportunity_id: uuid.UUID
+) -> list[SourceFile]:
+    result = await db.execute(
+        select(SourceFile)
+        .where(SourceFile.tenant_id == tenant_id, SourceFile.opportunity_id == opportunity_id)
+        .order_by(SourceFile.created_at.desc())
+    )
+    return list(result.scalars().all())

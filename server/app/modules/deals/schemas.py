@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- Snapshot Config (nested in InvestmentType) ---
@@ -250,3 +250,88 @@ class DashboardSummaryResponse(BaseModel):
     totalOpportunities: int
     mandateAllocations: list[MandateAllocationSummary]
     recentNews: list[NewsItemResponse]
+
+
+# --- Documents ---
+class DocumentResponse(BaseModel):
+    id: str
+    opportunityId: str
+    templateId: str | None
+    name: str
+    documentType: str
+    content: str | None
+    status: str
+    version: int
+    createdBy: str | None
+    createdAt: datetime
+    updatedAt: datetime
+
+
+class DocumentCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=500)
+    documentType: str
+    templateId: str | None = None
+    content: str | None = None
+
+
+class DocumentUpdate(BaseModel):
+    name: str | None = None
+    content: str | None = None
+    status: str | None = None
+
+
+# --- Reviews ---
+class ReviewDocumentItem(BaseModel):
+    documentId: str
+    documentName: str
+    documentType: str
+
+
+class DocumentReviewResponse(BaseModel):
+    id: str
+    reviewerId: str
+    requestedBy: str
+    status: str
+    rationale: str | None
+    rationaleGenerated: bool
+    requestedAt: datetime
+    reviewedAt: datetime | None
+    documents: list[ReviewDocumentItem]
+
+
+class DocumentReviewCreate(BaseModel):
+    reviewerId: str
+    documentIds: list[str]
+
+
+class DocumentReviewUpdate(BaseModel):
+    status: str  # approved, changes_requested
+    rationale: str | None = None
+
+
+# --- Shares ---
+class DocumentShareResponse(BaseModel):
+    id: str
+    documentId: str
+    sharedWith: str
+    sharedBy: str
+    permission: str
+    createdAt: datetime
+
+
+class DocumentShareCreate(BaseModel):
+    sharedWith: list[str]
+    permission: str = "comment"
+
+
+# --- Source Files ---
+class SourceFileResponse(BaseModel):
+    id: str
+    opportunityId: str
+    fileName: str
+    fileUrl: str
+    fileType: str | None
+    fileSize: int | None
+    processed: bool
+    sourceOrigin: str | None
+    createdAt: datetime
