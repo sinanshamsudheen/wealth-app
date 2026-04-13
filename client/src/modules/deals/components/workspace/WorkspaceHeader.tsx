@@ -2,7 +2,6 @@ import {
   ArrowLeft,
   Bell,
   Redo2,
-  Settings,
   Share2,
   Undo2,
 } from 'lucide-react'
@@ -147,14 +146,6 @@ export function WorkspaceHeader({
           disabled
         >
           <Bell className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          disabled
-        >
-          <Settings className="h-4 w-4" />
         </Button>
       </div>
     </div>

@@ -590,13 +590,15 @@ export const MOCK_DASHBOARD_SUMMARY: DashboardSummary = {
 export interface WorkspaceDocument {
   id: string
   opportunityId: string
-  templateId: string
+  templateId: string | null
   templateName: string
+  name: string
   title: string
-  content: string
-  documentType?: string
+  documentType: string
+  content: string | null
   status: 'draft' | 'in_review' | 'approved' | 'changes_requested'
-  createdBy: string
+  version: number
+  createdBy: string | null
   createdAt: string
   updatedAt: string
 }
@@ -607,8 +609,11 @@ export const MOCK_DOCUMENTS: WorkspaceDocument[] = [
     opportunityId: 'opp-abingworth-viii',
     templateId: 'tmpl-fund-investment-memo',
     templateName: 'Investment Memo',
+    name: 'Abingworth Bioventures VIII — Investment Memo',
     title: 'Abingworth Bioventures VIII — Investment Memo',
-    content: '# Investment Memo: Abingworth Bioventures VIII\n\n## Executive Summary\nAbingworth Bioventures VIII is a $450M life sciences venture capital fund targeting early to mid-stage biotech companies. The fund represents a compelling opportunity given the GP\'s 50+ year track record and the accelerating AI-driven drug discovery market.\n\n## Investment Thesis\nThe convergence of AI and biotechnology is creating unprecedented opportunities in drug discovery and development...',
+    documentType: 'investment_memo',
+    content: '<h1>Investment Memo: Abingworth Bioventures VIII</h1><h2>Executive Summary</h2><p>Abingworth Bioventures VIII is a $450M life sciences venture capital fund targeting early to mid-stage biotech companies. The fund represents a compelling opportunity given the GP\'s 50+ year track record and the accelerating AI-driven drug discovery market.</p><h2>Investment Thesis</h2><p>The convergence of AI and biotechnology is creating unprecedented opportunities in drug discovery and development...</p>',
+    version: 1,
     status: 'draft',
     createdBy: 'user-pine',
     createdAt: '2026-03-15T10:00:00Z',
@@ -619,8 +624,11 @@ export const MOCK_DOCUMENTS: WorkspaceDocument[] = [
     opportunityId: 'opp-abingworth-viii',
     templateId: 'tmpl-fund-pre-screening',
     templateName: 'Pre-Screening',
+    name: 'Abingworth Bioventures VIII — Pre-Screening Report',
     title: 'Abingworth Bioventures VIII — Pre-Screening Report',
-    content: '# Pre-Screening: Abingworth Bioventures VIII\n\n## Quick Assessment\n- **Manager Quality**: Tier 1 — 50+ year track record in life sciences\n- **Strategy Fit**: Strong — aligns with Growth Equity 2026 healthcare allocation\n- **Terms**: Market standard (2/20)\n- **Recommendation**: Proceed to full due diligence',
+    documentType: 'pre_screening',
+    content: '<h1>Pre-Screening: Abingworth Bioventures VIII</h1><h2>Quick Assessment</h2><ul><li><strong>Manager Quality</strong>: Tier 1 — 50+ year track record in life sciences</li><li><strong>Strategy Fit</strong>: Strong — aligns with Growth Equity 2026 healthcare allocation</li><li><strong>Terms</strong>: Market standard (2/20)</li><li><strong>Recommendation</strong>: Proceed to full due diligence</li></ul>',
+    version: 1,
     status: 'approved',
     createdBy: 'user-pine',
     createdAt: '2026-02-20T09:00:00Z',
@@ -631,8 +639,11 @@ export const MOCK_DOCUMENTS: WorkspaceDocument[] = [
     opportunityId: 'opp-abingworth-viii',
     templateId: 'tmpl-fund-ddq',
     templateName: 'DDQ',
+    name: 'Abingworth Bioventures VIII — Due Diligence Questionnaire',
     title: 'Abingworth Bioventures VIII — Due Diligence Questionnaire',
-    content: '# DDQ: Abingworth Bioventures VIII\n\n## 1. Organization & Team\n**Q: Describe the firm\'s history and evolution.**\nA: Founded in 1973, Abingworth is one of the longest-established life sciences venture firms globally...\n\n## 2. Investment Strategy\n**Q: Describe the fund\'s investment strategy.**\nA: ABV VIII targets Series A through Series C investments in therapeutics, diagnostics, and medtech...',
+    documentType: 'ddq',
+    content: '<h1>DDQ: Abingworth Bioventures VIII</h1><h2>1. Organization &amp; Team</h2><p><strong>Q: Describe the firm\'s history and evolution.</strong></p><p>A: Founded in 1973, Abingworth is one of the longest-established life sciences venture firms globally...</p><h2>2. Investment Strategy</h2><p><strong>Q: Describe the fund\'s investment strategy.</strong></p><p>A: ABV VIII targets Series A through Series C investments in therapeutics, diagnostics, and medtech...</p>',
+    version: 1,
     status: 'in_review',
     createdBy: 'user-pine',
     createdAt: '2026-03-10T10:00:00Z',
@@ -641,11 +652,13 @@ export const MOCK_DOCUMENTS: WorkspaceDocument[] = [
   {
     id: 'doc-note-1',
     opportunityId: 'opp-abingworth-viii',
-    templateId: '',
+    templateId: null,
     templateName: '',
+    name: 'MLP Brainstorm',
     title: 'MLP Brainstorm',
-    content: '# MLP Brainstorm\n\nKey considerations for the Abingworth VIII allocation:\n\n- Portfolio construction impact: adds life sciences diversification\n- GP relationship: long-standing, strong communication\n- Co-invest potential: historically offered 2-3 co-invests per fund cycle\n- Risk factors: concentration in early-stage biotech, regulatory timelines\n\n## Action Items\n- Schedule follow-up call with IR team\n- Request updated portfolio construction model\n- Compare terms with ABV VII side letter',
     documentType: 'note',
+    content: '<h1>MLP Brainstorm</h1><p>Key considerations for the Abingworth VIII allocation:</p><ul><li>Portfolio construction impact: adds life sciences diversification</li><li>GP relationship: long-standing, strong communication</li><li>Co-invest potential: historically offered 2-3 co-invests per fund cycle</li><li>Risk factors: concentration in early-stage biotech, regulatory timelines</li></ul><h2>Action Items</h2><ul><li>Schedule follow-up call with IR team</li><li>Request updated portfolio construction model</li><li>Compare terms with ABV VII side letter</li></ul>',
+    version: 1,
     status: 'draft',
     createdBy: 'user-raoof',
     createdAt: '2026-04-05T11:00:00Z',
@@ -654,11 +667,13 @@ export const MOCK_DOCUMENTS: WorkspaceDocument[] = [
   {
     id: 'doc-note-2',
     opportunityId: 'opp-abingworth-viii',
-    templateId: '',
+    templateId: null,
     templateName: '',
+    name: 'Notes Meeting UAF',
     title: 'Notes Meeting UAF',
-    content: '# Notes from UAF Meeting — April 8, 2026\n\n**Attendees:** Raoof, Usman, Pine\n\n## Discussion Summary\n- UAF committee reviewed Abingworth Bioventures VIII allocation proposal\n- Consensus on strong GP quality and strategy alignment\n- Concern raised about total healthcare exposure across portfolio\n- Requested sensitivity analysis on downside scenario\n\n## Decisions\n- Proceed with allocation at $15M (reduced from initial $20M proposal)\n- Request updated MOIC waterfall from GP\n- Final approval contingent on completion of reference checks',
     documentType: 'note',
+    content: '<h1>Notes from UAF Meeting — April 8, 2026</h1><p><strong>Attendees:</strong> Raoof, Usman, Pine</p><h2>Discussion Summary</h2><ul><li>UAF committee reviewed Abingworth Bioventures VIII allocation proposal</li><li>Consensus on strong GP quality and strategy alignment</li><li>Concern raised about total healthcare exposure across portfolio</li><li>Requested sensitivity analysis on downside scenario</li></ul><h2>Decisions</h2><ul><li>Proceed with allocation at $15M (reduced from initial $20M proposal)</li><li>Request updated MOIC waterfall from GP</li><li>Final approval contingent on completion of reference checks</li></ul>',
+    version: 1,
     status: 'draft',
     createdBy: 'user-usman',
     createdAt: '2026-04-08T15:00:00Z',

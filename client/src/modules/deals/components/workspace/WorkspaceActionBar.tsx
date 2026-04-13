@@ -64,7 +64,7 @@ export function WorkspaceActionBar({
   // Pass recommendation warning
   if (opportunity.recommendation === 'pass') {
     return (
-      <div className="flex items-center gap-3 px-4 py-2.5 border-t shrink-0 bg-amber-50 dark:bg-amber-950/30">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0 bg-amber-50 dark:bg-amber-950/30">
         <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <span className="text-sm text-amber-800 dark:text-amber-200">
           This deal is marked as Pass — what would you like to do?
@@ -91,7 +91,7 @@ export function WorkspaceActionBar({
   // Document status-based bars
   if (doc.status === 'draft') {
     return (
-      <div className="flex items-center gap-3 px-4 py-2.5 border-t shrink-0 bg-background">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0 bg-background">
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onValidate}>
             <Shield className="h-3.5 w-3.5 mr-1.5" />
@@ -109,7 +109,7 @@ export function WorkspaceActionBar({
 
   if (doc.status === 'in_review') {
     return (
-      <div className="flex items-center gap-3 px-4 py-2.5 border-t shrink-0 bg-blue-50 dark:bg-blue-950/30">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0 bg-blue-50 dark:bg-blue-950/30">
         <span className="text-sm text-blue-800 dark:text-blue-200">
           This document is currently in review
         </span>
@@ -124,7 +124,7 @@ export function WorkspaceActionBar({
 
   if (doc.status === 'approved') {
     return (
-      <div className="flex items-center gap-3 px-4 py-2.5 border-t shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
         <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span className="text-sm text-emerald-800 dark:text-emerald-200">
           This document has been approved

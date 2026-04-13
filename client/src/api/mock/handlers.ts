@@ -739,13 +739,17 @@ export const handlers = [
     const { oppId } = params as { oppId: string }
     const body = await request.json() as Partial<WorkspaceDocument>
     const now = new Date().toISOString()
+    const docName = (body as Record<string, unknown>).name as string || body.title || 'Untitled Document'
     const newDoc: WorkspaceDocument = {
       id: `doc-${Date.now().toString(36)}`,
       opportunityId: oppId as string,
-      templateId: body.templateId || '',
+      templateId: body.templateId || null,
       templateName: body.templateName || '',
-      title: body.title || 'Untitled Document',
+      name: docName,
+      title: docName,
+      documentType: (body as Record<string, unknown>).documentType as string || 'custom',
       content: body.content || '',
+      version: 1,
       status: 'draft',
       createdBy: 'user-raoof',
       createdAt: now,

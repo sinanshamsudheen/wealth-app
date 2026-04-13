@@ -162,6 +162,16 @@ export function OpportunityWorkspacePage() {
             onTabClose={(tabId: string) => store.closeTab(tabId)}
           />
 
+          {/* Context-aware action bar — above content */}
+          <WorkspaceActionBar
+            activeTab={activeTab}
+            opportunity={opp}
+            documents={store.workspaceDocuments}
+            onValidate={() => setShowValidation(true)}
+            onShare={() => setShowShare(true)}
+            onDownload={(doc: Document) => downloadAsHTML(doc, opp.name)}
+          />
+
           {/* Active Tab Content */}
           <div className="flex-1 overflow-auto">
             {activeTab?.type === 'snapshot' && (
@@ -188,16 +198,6 @@ export function OpportunityWorkspacePage() {
               </div>
             )}
           </div>
-
-          {/* Context-aware bottom action bar */}
-          <WorkspaceActionBar
-            activeTab={activeTab}
-            opportunity={opp}
-            documents={store.workspaceDocuments}
-            onValidate={() => setShowValidation(true)}
-            onShare={() => setShowShare(true)}
-            onDownload={(doc: Document) => downloadAsHTML(doc, opp.name)}
-          />
         </div>
       </div>
 
