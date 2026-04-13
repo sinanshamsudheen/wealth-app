@@ -1,9 +1,11 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     ARRAY,
     UUID,
     Boolean,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
@@ -11,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -135,3 +138,34 @@ class Opportunity(Base, TenantMixin, TimestampMixin):
 
     investment_type: Mapped["InvestmentType | None"] = relationship(lazy="selectin")
     asset_manager: Mapped["AssetManager | None"] = relationship(lazy="selectin")
+
+
+class NewsItem(Base, TenantMixin, TimestampMixin):
+    __tablename__ = "news_items"
+    __table_args__ = (
+        Index("ix_news_items_tenant", "tenant_id"),
+        {"schema": "deals"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    headline: Mapped[str] = mapped_column(String(500), nullable=False)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    full_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    opportunity_links: Mapped[list["NewsOpportunityLink"]] = relationship(
+        back_populates="news_item", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class NewsOpportunityLink(Base):
+    __tablename__ = "news_opportunity_links"
+    __table_args__ = {"schema": "deals"}
+
+    news_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("deals.news_items.id", ondelete="CASCADE"), primary_key=True)
+    opportunity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("deals.opportunities.id", ondelete="CASCADE"), primary_key=True)
+
+    news_item: Mapped["NewsItem"] = relationship(back_populates="opportunity_links")
+    opportunity: Mapped["Opportunity"] = relationship()

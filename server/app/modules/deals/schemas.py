@@ -172,3 +172,81 @@ class OpportunityUpdate(BaseModel):
     assetManagerId: uuid.UUID | None = None
     assignedTo: uuid.UUID | None = None
     snapshotData: dict | None = None
+
+
+# --- Asset Managers ---
+class AssetManagerResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    type: str | None = None
+    location: str | None = None
+    description: str | None = None
+    fundInfo: dict
+    firmInfo: dict
+    strategy: dict
+    characteristics: dict
+    createdByType: str
+    createdAt: datetime
+    updatedAt: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AssetManagerCreate(BaseModel):
+    name: str
+    type: str | None = None
+    location: str | None = None
+    description: str | None = None
+    fundInfo: dict = {}
+    firmInfo: dict = {}
+    strategy: dict = {}
+    characteristics: dict = {}
+
+
+class AssetManagerUpdate(BaseModel):
+    name: str | None = None
+    type: str | None = None
+    location: str | None = None
+    description: str | None = None
+    fundInfo: dict | None = None
+    firmInfo: dict | None = None
+    strategy: dict | None = None
+    characteristics: dict | None = None
+
+
+# --- News ---
+class NewsItemResponse(BaseModel):
+    id: uuid.UUID
+    headline: str
+    summary: str | None = None
+    fullContent: str | None = None
+    category: str | None = None
+    sourceUrl: str | None = None
+    linkedOpportunityIds: list[str]
+    generatedAt: datetime
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# --- Dashboard ---
+class PipelineStatusCount(BaseModel):
+    status: str
+    count: int
+
+
+class MandateAllocationSummary(BaseModel):
+    mandateId: uuid.UUID
+    mandateName: str
+    targetAllocation: float | None = None
+    currentAllocation: float | None = None
+    opportunityCount: int
+
+
+class DashboardSummaryResponse(BaseModel):
+    pipelineCounts: list[PipelineStatusCount]
+    totalOpportunities: int
+    mandateAllocations: list[MandateAllocationSummary]
+    recentNews: list[NewsItemResponse]

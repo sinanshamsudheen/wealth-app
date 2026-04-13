@@ -5,6 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.deals import service
 from app.modules.deals.schemas import (
+    AssetManagerCreate,
+    AssetManagerResponse,
+    AssetManagerUpdate,
+    DashboardSummaryResponse,
     DocumentTemplateResponse,
     DocumentTemplateUpdate,
     InvestmentTypeCreate,
@@ -13,6 +17,7 @@ from app.modules.deals.schemas import (
     MandateCreate,
     MandateResponse,
     MandateUpdate,
+    NewsItemResponse,
     OpportunityCreate,
     OpportunityResponse,
     OpportunityUpdate,
@@ -249,3 +254,86 @@ async def delete_opportunity(
 ):
     await service.delete_opportunity(db, user.tenant_id, opp_id)
     return Response(status_code=204)
+
+
+# --- Asset Managers ---
+@router.get("/asset-managers", response_model=SuccessResponse[list[AssetManagerResponse]])
+async def list_asset_managers(
+    type: str | None = Query(None),
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.list_asset_managers(db, user.tenant_id, type)
+    return SuccessResponse(data=data)
+
+
+@router.post(
+    "/asset-managers",
+    response_model=SuccessResponse[AssetManagerResponse],
+    status_code=201,
+)
+async def create_asset_manager(
+    body: AssetManagerCreate,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.create_asset_manager(db, user.tenant_id, body)
+    return SuccessResponse(data=data)
+
+
+@router.get(
+    "/asset-managers/{am_id}",
+    response_model=SuccessResponse[AssetManagerResponse],
+)
+async def get_asset_manager(
+    am_id: uuid.UUID,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.get_asset_manager(db, user.tenant_id, am_id)
+    return SuccessResponse(data=data)
+
+
+@router.put(
+    "/asset-managers/{am_id}",
+    response_model=SuccessResponse[AssetManagerResponse],
+)
+async def update_asset_manager(
+    am_id: uuid.UUID,
+    body: AssetManagerUpdate,
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.update_asset_manager(db, user.tenant_id, am_id, body)
+    return SuccessResponse(data=data)
+
+
+@router.delete("/asset-managers/{am_id}", status_code=204)
+async def delete_asset_manager(
+    am_id: uuid.UUID,
+    user: CurrentUser = DealsOwner,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    await service.delete_asset_manager(db, user.tenant_id, am_id)
+    return Response(status_code=204)
+
+
+# --- News ---
+@router.get("/news", response_model=SuccessResponse[list[NewsItemResponse]])
+async def list_news_items(
+    category: str | None = Query(None),
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.list_news_items(db, user.tenant_id, category)
+    return SuccessResponse(data=data)
+
+
+# --- Dashboard ---
+@router.get("/dashboard/summary", response_model=SuccessResponse[DashboardSummaryResponse])
+async def get_dashboard_summary(
+    user: CurrentUser = DealsRead,
+    db: AsyncSession = Depends(get_db_with_tenant),
+):
+    data = await service.get_dashboard_summary(db, user.tenant_id)
+    return SuccessResponse(data=data)

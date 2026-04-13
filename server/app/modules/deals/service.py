@@ -3,18 +3,26 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.deals import repository
+from app.modules.deals.models import AssetManager
 from app.modules.deals.schemas import (
+    AssetManagerCreate,
+    AssetManagerResponse,
+    AssetManagerUpdate,
+    DashboardSummaryResponse,
     DocumentTemplateResponse,
     InvestmentTypeCreate,
     InvestmentTypeResponse,
     InvestmentTypeUpdate,
     DocumentTemplateUpdate,
+    MandateAllocationSummary,
     MandateCreate,
     MandateResponse,
     MandateUpdate,
+    NewsItemResponse,
     OpportunityCreate,
     OpportunityResponse,
     OpportunityUpdate,
+    PipelineStatusCount,
 )
 from app.shared.exceptions import forbidden, not_found
 
@@ -332,3 +340,151 @@ async def delete_opportunity(
     if not opp:
         raise not_found("Opportunity not found")
     return True
+
+
+# --- Asset Manager helpers ---
+def _asset_manager_to_response(am) -> AssetManagerResponse:
+    return AssetManagerResponse(
+        id=am.id,
+        name=am.name,
+        type=am.type,
+        location=am.location,
+        description=am.description,
+        fundInfo=am.fund_info,
+        firmInfo=am.firm_info,
+        strategy=am.strategy,
+        characteristics=am.characteristics,
+        createdByType=am.created_by_type,
+        createdAt=am.created_at,
+        updatedAt=am.updated_at,
+    )
+
+
+def _news_item_to_response(item) -> NewsItemResponse:
+    return NewsItemResponse(
+        id=item.id,
+        headline=item.headline,
+        summary=item.summary,
+        fullContent=item.full_content,
+        category=item.category,
+        sourceUrl=item.source_url,
+        linkedOpportunityIds=[str(link.opportunity_id) for link in item.opportunity_links],
+        generatedAt=item.generated_at,
+        createdAt=item.created_at,
+    )
+
+
+# --- Asset Managers ---
+async def list_asset_managers(
+    db: AsyncSession, tenant_id: uuid.UUID, type_filter: str | None = None
+) -> list[AssetManagerResponse]:
+    managers = await repository.list_asset_managers(db, tenant_id, type_filter)
+    return [_asset_manager_to_response(m) for m in managers]
+
+
+async def get_asset_manager(
+    db: AsyncSession, tenant_id: uuid.UUID, am_id: uuid.UUID
+) -> AssetManagerResponse:
+    am = await repository.get_asset_manager(db, tenant_id, am_id)
+    if not am:
+        raise not_found("Asset manager not found")
+    return _asset_manager_to_response(am)
+
+
+async def create_asset_manager(
+    db: AsyncSession, tenant_id: uuid.UUID, data: AssetManagerCreate
+) -> AssetManagerResponse:
+    am = AssetManager(
+        id=uuid.uuid4(),
+        tenant_id=tenant_id,
+        name=data.name,
+        type=data.type,
+        location=data.location,
+        description=data.description,
+        fund_info=data.fundInfo,
+        firm_info=data.firmInfo,
+        strategy=data.strategy,
+        characteristics=data.characteristics,
+        created_by_type="manual",
+    )
+    am = await repository.create_asset_manager(db, am)
+    return _asset_manager_to_response(am)
+
+
+async def update_asset_manager(
+    db: AsyncSession, tenant_id: uuid.UUID, am_id: uuid.UUID, data: AssetManagerUpdate
+) -> AssetManagerResponse:
+    am = await repository.get_asset_manager(db, tenant_id, am_id)
+    if not am:
+        raise not_found("Asset manager not found")
+    update_data = {}
+    if data.name is not None:
+        update_data["name"] = data.name
+    if data.type is not None:
+        update_data["type"] = data.type
+    if data.location is not None:
+        update_data["location"] = data.location
+    if data.description is not None:
+        update_data["description"] = data.description
+    if data.fundInfo is not None:
+        update_data["fund_info"] = data.fundInfo
+    if data.firmInfo is not None:
+        update_data["firm_info"] = data.firmInfo
+    if data.strategy is not None:
+        update_data["strategy"] = data.strategy
+    if data.characteristics is not None:
+        update_data["characteristics"] = data.characteristics
+
+    am = await repository.update_asset_manager(db, am, update_data)
+    return _asset_manager_to_response(am)
+
+
+async def delete_asset_manager(
+    db: AsyncSession, tenant_id: uuid.UUID, am_id: uuid.UUID
+) -> bool:
+    am = await repository.get_asset_manager(db, tenant_id, am_id)
+    if not am:
+        raise not_found("Asset manager not found")
+    await repository.delete_asset_manager(db, am)
+    return True
+
+
+# --- News ---
+async def list_news_items(
+    db: AsyncSession, tenant_id: uuid.UUID, category: str | None = None
+) -> list[NewsItemResponse]:
+    items = await repository.list_news_items(db, tenant_id, category)
+    return [_news_item_to_response(item) for item in items]
+
+
+# --- Dashboard ---
+async def get_dashboard_summary(
+    db: AsyncSession, tenant_id: uuid.UUID
+) -> DashboardSummaryResponse:
+    status_counts = await repository.count_opportunities_by_status(db, tenant_id)
+    pipeline_counts = [
+        PipelineStatusCount(status=status, count=count) for status, count in status_counts
+    ]
+    total_opportunities = sum(pc.count for pc in pipeline_counts)
+
+    mandate_rows = await repository.get_mandate_allocation_summaries(db, tenant_id)
+    mandate_allocations = [
+        MandateAllocationSummary(
+            mandateId=row[0],
+            mandateName=row[1],
+            targetAllocation=float(row[2]) if row[2] is not None else None,
+            currentAllocation=None,
+            opportunityCount=row[3],
+        )
+        for row in mandate_rows
+    ]
+
+    news_items = await repository.list_news_items(db, tenant_id, limit=10)
+    recent_news = [_news_item_to_response(item) for item in news_items]
+
+    return DashboardSummaryResponse(
+        pipelineCounts=pipeline_counts,
+        totalOpportunities=total_opportunities,
+        mandateAllocations=mandate_allocations,
+        recentNews=recent_news,
+    )

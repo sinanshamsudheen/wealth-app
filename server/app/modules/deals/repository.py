@@ -4,9 +4,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.deals.models import (
+    AssetManager,
     DocumentTemplate,
     InvestmentType,
     Mandate,
+    NewsItem,
     Opportunity,
 )
 
@@ -243,5 +245,89 @@ async def count_opportunities_by_status(
         select(Opportunity.pipeline_status, func.count())
         .where(Opportunity.tenant_id == tenant_id)
         .group_by(Opportunity.pipeline_status)
+    )
+    return list(result.all())
+
+
+# --- Asset Managers ---
+async def list_asset_managers(
+    db: AsyncSession, tenant_id: uuid.UUID, type_filter: str | None = None
+) -> list[AssetManager]:
+    stmt = select(AssetManager).where(AssetManager.tenant_id == tenant_id)
+    if type_filter is not None:
+        stmt = stmt.where(AssetManager.type == type_filter)
+    stmt = stmt.order_by(AssetManager.name)
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_asset_manager(
+    db: AsyncSession, tenant_id: uuid.UUID, am_id: uuid.UUID
+) -> AssetManager | None:
+    result = await db.execute(
+        select(AssetManager).where(
+            AssetManager.tenant_id == tenant_id, AssetManager.id == am_id
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def create_asset_manager(
+    db: AsyncSession, am: AssetManager
+) -> AssetManager:
+    db.add(am)
+    await db.flush()
+    return am
+
+
+async def update_asset_manager(
+    db: AsyncSession, am: AssetManager, data: dict
+) -> AssetManager:
+    for key, value in data.items():
+        if value is not None:
+            setattr(am, key, value)
+    await db.flush()
+    return am
+
+
+async def delete_asset_manager(
+    db: AsyncSession, am: AssetManager
+) -> AssetManager:
+    await db.delete(am)
+    await db.flush()
+    return am
+
+
+# --- News ---
+async def list_news_items(
+    db: AsyncSession, tenant_id: uuid.UUID, category: str | None = None, limit: int = 50
+) -> list[NewsItem]:
+    stmt = select(NewsItem).where(NewsItem.tenant_id == tenant_id)
+    if category is not None:
+        stmt = stmt.where(NewsItem.category == category)
+    stmt = stmt.order_by(NewsItem.generated_at.desc()).limit(limit)
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+# --- Dashboard helpers ---
+async def get_mandate_allocation_summaries(
+    db: AsyncSession, tenant_id: uuid.UUID
+) -> list[tuple]:
+    """Get active mandates with opportunity counts."""
+    result = await db.execute(
+        select(
+            Mandate.id,
+            Mandate.name,
+            Mandate.target_allocation,
+            func.count(Opportunity.id),
+        )
+        .outerjoin(
+            Opportunity,
+            (Opportunity.tenant_id == Mandate.tenant_id)
+            & (Opportunity.pipeline_status != "rejected"),
+        )
+        .where(Mandate.tenant_id == tenant_id, Mandate.status == "active")
+        .group_by(Mandate.id, Mandate.name, Mandate.target_allocation)
     )
     return list(result.all())
