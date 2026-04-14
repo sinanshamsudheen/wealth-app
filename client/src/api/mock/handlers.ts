@@ -1059,6 +1059,32 @@ export const handlers = [
     return HttpResponse.json(result)
   }),
 
+  http.post('/api/deals/opportunities/:oppId/files', async ({ params, request }) => {
+    await delay(500)
+    const { oppId } = params as { oppId: string }
+    const formData = await request.formData()
+    const file = formData.get('file') as File | null
+    if (!file) return HttpResponse.json({ error: 'No file provided' }, { status: 400 })
+
+    // Create a blob URL for the uploaded file so it can be viewed/downloaded
+    const blob = new Blob([await file.arrayBuffer()], { type: file.type })
+    const blobUrl = URL.createObjectURL(blob)
+
+    const newFile = {
+      id: `sf-${Date.now()}`,
+      opportunityId: oppId,
+      fileName: file.name,
+      fileUrl: blobUrl,
+      fileType: file.type || null,
+      fileSize: file.size,
+      processed: false,
+      sourceOrigin: 'upload',
+      createdAt: new Date().toISOString(),
+    }
+    MOCK_SOURCE_FILES.push(newFile as typeof MOCK_SOURCE_FILES[0])
+    return HttpResponse.json(newFile, { status: 201 })
+  }),
+
   // ── Deals: Team Members ────────────────────────────────────────────
 
   http.get('/api/deals/team-members', async () => {

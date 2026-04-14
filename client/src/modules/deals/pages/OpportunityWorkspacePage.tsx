@@ -112,7 +112,7 @@ export function OpportunityWorkspacePage() {
     : null
 
   return (
-    <div className="flex flex-col -m-6 h-[calc(100vh-3rem)] overflow-hidden">
+    <div className="flex flex-col -m-6 h-[calc(100vh-3.5rem)] overflow-hidden" style={{ width: 'calc(100% + 3rem)', maxWidth: 'none' }}>
       {/* Header — sticky, never scrolls */}
       <WorkspaceHeader
         opportunity={opp}
@@ -167,6 +167,8 @@ export function OpportunityWorkspacePage() {
           activeTabId={store.activeTabId}
           onOpenTab={(tab: WorkspaceTab) => store.openTab(tab)}
           onCreateDocument={() => setShowCreateDoc(true)}
+          onUploadFile={(file: File) => store.uploadSourceFile(opp.id, file)}
+          uploadingFile={store.uploadingFile}
           onToggle={() => store.toggleSidebar()}
         />
 

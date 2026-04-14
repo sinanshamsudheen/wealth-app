@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { downloadAsHTML, downloadAsText } from './downloadDocument'
+import { downloadAsPDF, downloadAsDocx } from './downloadDocument'
 
 import type { ApprovalStage, Opportunity, Document } from '../../types'
 
@@ -295,17 +295,17 @@ export function WorkspaceHeader({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                if (activeDocument) downloadAsHTML(activeDocument, opportunity.name)
+                if (activeDocument) downloadAsPDF(activeDocument, opportunity.name)
               }}
             >
-              Download as HTML
+              Download as PDF
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
-                if (activeDocument) downloadAsText(activeDocument)
+                if (activeDocument) downloadAsDocx(activeDocument, opportunity.name)
               }}
             >
-              Download as Text
+              Download as Word (.docx)
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

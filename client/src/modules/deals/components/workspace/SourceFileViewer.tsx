@@ -1,4 +1,4 @@
-import { Check, Download, File, FileText } from 'lucide-react'
+import { Check, Download, File, FileSpreadsheet, FileText } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { SourceFile } from '../../types'
@@ -22,16 +22,47 @@ function formatDate(dateStr: string): string {
   })
 }
 
+function getFileCategory(fileType: string | null, fileName: string): 'pdf' | 'image' | 'spreadsheet' | 'document' | 'other' {
+  const type = fileType?.toLowerCase() ?? ''
+  const name = fileName.toLowerCase()
+  if (type.includes('pdf') || name.endsWith('.pdf')) return 'pdf'
+  if (type.includes('image') || /\.(png|jpg|jpeg|gif|webp|svg)$/.test(name)) return 'image'
+  if (type.includes('spreadsheet') || type.includes('excel') || /\.(xlsx?|csv)$/.test(name)) return 'spreadsheet'
+  if (type.includes('word') || type.includes('document') || /\.(docx?|rtf)$/.test(name)) return 'document'
+  return 'other'
+}
+
+function FileIcon({ category }: { category: ReturnType<typeof getFileCategory> }) {
+  switch (category) {
+    case 'pdf': return <FileText className="h-5 w-5 text-red-500 shrink-0" />
+    case 'spreadsheet': return <FileSpreadsheet className="h-5 w-5 text-green-600 shrink-0" />
+    case 'document': return <FileText className="h-5 w-5 text-blue-500 shrink-0" />
+    case 'image': return <File className="h-5 w-5 text-purple-500 shrink-0" />
+    default: return <File className="h-5 w-5 text-muted-foreground shrink-0" />
+  }
+}
+
+function LargeFileIcon({ category }: { category: ReturnType<typeof getFileCategory> }) {
+  switch (category) {
+    case 'spreadsheet': return <FileSpreadsheet className="h-16 w-16 text-green-600" />
+    case 'document': return <FileText className="h-16 w-16 text-blue-500" />
+    default: return <File className="h-16 w-16 text-muted-foreground" />
+  }
+}
+
 export function SourceFileViewer({ sourceFile }: SourceFileViewerProps) {
   const { fileName, fileUrl, fileType, fileSize, processed, createdAt } = sourceFile
+  const category = getFileCategory(fileType, fileName)
 
-  const isPdf = fileType?.toLowerCase().includes('pdf') ?? false
-  const isImage = fileType?.toLowerCase().includes('image') ?? false
-
-  const fileTypeLabel = fileType ? fileType.toUpperCase().replace('APPLICATION/', '').replace('IMAGE/', '') : 'File'
+  const fileTypeLabel = fileType
+    ? fileType.toUpperCase().replace('APPLICATION/', '').replace('IMAGE/', '').split('.').pop() ?? 'File'
+    : 'File'
 
   function handleDownload() {
-    window.open(fileUrl, '_blank')
+    const a = document.createElement('a')
+    a.href = fileUrl
+    a.download = fileName
+    a.click()
   }
 
   return (
@@ -39,11 +70,7 @@ export function SourceFileViewer({ sourceFile }: SourceFileViewerProps) {
       {/* Header */}
       <div className="p-4 border-b space-y-2 shrink-0">
         <div className="flex items-center gap-2">
-          {isPdf ? (
-            <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-          ) : (
-            <File className="h-5 w-5 text-muted-foreground shrink-0" />
-          )}
+          <FileIcon category={category} />
           <span className="text-base font-semibold truncate">{fileName}</span>
         </div>
 
@@ -71,15 +98,15 @@ export function SourceFileViewer({ sourceFile }: SourceFileViewerProps) {
       </div>
 
       {/* Viewer */}
-      {isPdf ? (
+      {category === 'pdf' ? (
         <div className="flex-1 overflow-hidden">
           <iframe
             src={fileUrl}
-            className="w-full h-full border-0 rounded"
+            className="w-full h-full border-0"
             title={fileName}
           />
         </div>
-      ) : isImage ? (
+      ) : category === 'image' ? (
         <div className="flex-1 overflow-hidden p-4 flex items-center justify-center">
           <img
             src={fileUrl}
@@ -88,11 +115,22 @@ export function SourceFileViewer({ sourceFile }: SourceFileViewerProps) {
           />
         </div>
       ) : (
-        <div className="flex-1 overflow-hidden p-4 flex flex-col items-center justify-center gap-3 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground max-w-xs">
-            Preview not available for this file type. Use the download button to view.
-          </p>
+        <div className="flex-1 overflow-hidden flex flex-col items-center justify-center gap-4 text-center p-8">
+          <LargeFileIcon category={category} />
+          <div className="space-y-1">
+            <p className="text-base font-medium">{fileName}</p>
+            <p className="text-sm text-muted-foreground">
+              {category === 'spreadsheet'
+                ? 'Spreadsheet files cannot be previewed in the browser.'
+                : category === 'document'
+                  ? 'Word documents cannot be previewed in the browser.'
+                  : 'This file type cannot be previewed in the browser.'}
+            </p>
+          </div>
+          <Button onClick={handleDownload}>
+            <Download className="h-4 w-4 mr-2" />
+            Download to View
+          </Button>
         </div>
       )}
     </div>

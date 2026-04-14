@@ -104,6 +104,16 @@ export const dealsApi = {
   // Source Files
   listSourceFiles: (opportunityId: string) =>
     api.get<SourceFile[]>(`/deals/opportunities/${opportunityId}/files`),
+  uploadSourceFile: async (opportunityId: string, file: File): Promise<SourceFile> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`/api/deals/opportunities/${opportunityId}/files`, {
+      method: 'POST',
+      body: formData,
+    })
+    if (!res.ok) throw new Error('Upload failed')
+    return res.json()
+  },
 
   // Team Members
   listTeamMembers: () => api.get<TeamMember[]>('/deals/team-members'),

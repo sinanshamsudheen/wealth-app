@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, type ChangeEvent } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
-import Image from '@tiptap/extension-image'
+import { TextStyle } from '@tiptap/extension-text-style'
+import { ResizableImage } from './ResizableImageExtension'
+import { FontSize, FONT_SIZES } from './FontSizeExtension'
 import Placeholder from '@tiptap/extension-placeholder'
 import {
   Bold,
@@ -22,11 +24,21 @@ import {
   AlignCenter,
   AlignRight,
   ImageIcon,
+  Upload,
+  Link2,
   Code,
+  ImagePlus,
+  X,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { dealsApi } from '../../api'
 import { useUndoRedo } from './useUndoRedo'
@@ -77,16 +89,77 @@ function ToolbarSeparator() {
   return <div className="h-5 w-px bg-border mx-1" />
 }
 
+// ── Font Size Dropdown ──────────────────────────────────────────────
+
+function FontSizeSelect({ editor, disabled }: { editor: Editor; disabled: boolean }) {
+  const currentSize = editor.getAttributes('textStyle')?.fontSize ?? ''
+  const displaySize = currentSize ? currentSize.replace('px', '') : '—'
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          'inline-flex h-7 items-center justify-center rounded-md px-2 text-xs font-medium tabular-nums min-w-[3rem]',
+          disabled
+            ? 'opacity-50 pointer-events-none'
+            : 'hover:bg-accent hover:text-accent-foreground cursor-pointer text-muted-foreground',
+        )}
+        title="Font size"
+      >
+        {displaySize}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-60 overflow-y-auto min-w-[4rem]">
+        <DropdownMenuItem
+          onClick={() => (editor.chain().focus() as any).unsetFontSize().run()}
+          className="text-xs"
+        >
+          Default
+        </DropdownMenuItem>
+        {FONT_SIZES.map(({ label, value }) => (
+          <DropdownMenuItem
+            key={value}
+            onClick={() => (editor.chain().focus() as any).setFontSize(value).run()}
+            className={cn('text-xs', currentSize === value && 'bg-accent text-accent-foreground')}
+          >
+            {label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+// ── Editor Toolbar ──────────────────────────────────────────────────
+
 interface EditorToolbarProps {
   editor: Editor | null
   disabled: boolean
 }
 
 function EditorToolbar({ editor, disabled }: EditorToolbarProps) {
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
+  function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !editor) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      ;(editor.chain().focus() as any).setResizableImage({ src: dataUrl }).run()
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
   if (!editor) return null
 
   return (
     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b flex-wrap">
+      {/* Font size */}
+      <FontSizeSelect editor={editor} disabled={disabled} />
+
+      <ToolbarSeparator />
+
       {/* Text formatting */}
       <ToolbarButton disabled={disabled}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -212,17 +285,36 @@ function EditorToolbar({ editor, disabled }: EditorToolbarProps) {
       <ToolbarSeparator />
 
       {/* Image */}
-      <ToolbarButton disabled={disabled}
-        onClick={() => {
-          const url = window.prompt('Image URL:')
-          if (url) {
-            editor.chain().focus().setImage({ src: url }).run()
-          }
-        }}
-        title="Insert Image"
-      >
-        <ImageIcon className="h-4 w-4" />
-      </ToolbarButton>
+      <input
+        ref={imageInputRef}
+        type="file"
+        className="hidden"
+        accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+        onChange={handleImageUpload}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          title="Insert Image"
+        >
+          <ImageIcon className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload from computer
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => {
+            const url = window.prompt('Image URL:')
+            if (url) {
+              ;(editor.chain().focus() as any).setResizableImage({ src: url }).run()
+            }
+          }}>
+            <Link2 className="h-4 w-4 mr-2" />
+            Insert from URL
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <ToolbarSeparator />
 
@@ -238,10 +330,83 @@ function EditorToolbar({ editor, disabled }: EditorToolbarProps) {
   )
 }
 
+// ── Logo Upload ─────────────────────────────────────────────────────
+
+function LogoUpload({
+  logoUrl,
+  onLogoChange,
+  disabled,
+}: {
+  logoUrl: string | null
+  onLogoChange: (url: string | null) => void
+  disabled: boolean
+}) {
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
+  function handleLogoUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      onLogoChange(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  if (logoUrl) {
+    return (
+      <div className="relative group shrink-0">
+        <img
+          src={logoUrl}
+          alt="Document logo"
+          className="h-10 max-w-[120px] object-contain rounded"
+        />
+        {!disabled && (
+          <button
+            type="button"
+            onClick={() => onLogoChange(null)}
+            className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Remove logo"
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  if (disabled) return null
+
+  return (
+    <>
+      <input
+        ref={logoInputRef}
+        type="file"
+        className="hidden"
+        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+        onChange={handleLogoUpload}
+      />
+      <button
+        type="button"
+        onClick={() => logoInputRef.current?.click()}
+        className="flex items-center gap-1.5 rounded-md border border-dashed border-muted-foreground/30 px-3 py-1.5 text-xs text-muted-foreground hover:border-muted-foreground/60 hover:text-foreground transition-colors shrink-0"
+        title="Add logo — appears on downloaded documents"
+      >
+        <ImagePlus className="h-3.5 w-3.5" />
+        Add Logo
+      </button>
+    </>
+  )
+}
+
+// ── Main Component ──────────────────────────────────────────────────
+
 export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPanelProps) {
   const [name, setName] = useState(document.name)
   const [editingName, setEditingName] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
   const contentRef = useRef(document.content ?? '')
@@ -249,6 +414,21 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
 
   const status = statusConfig[document.status]
   const isReadOnly = document.status === 'approved'
+
+  // Persist logo in localStorage keyed by document ID
+  useEffect(() => {
+    const saved = localStorage.getItem(`doc-logo-${document.id}`)
+    if (saved) setLogoUrl(saved)
+  }, [document.id])
+
+  function handleLogoChange(url: string | null) {
+    setLogoUrl(url)
+    if (url) {
+      localStorage.setItem(`doc-logo-${document.id}`, url)
+    } else {
+      localStorage.removeItem(`doc-logo-${document.id}`)
+    }
+  }
 
   const saveContent = useCallback(
     async (newContent: string) => {
@@ -294,8 +474,10 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
         heading: { levels: [1, 2, 3, 4] },
       }),
       Underline,
+      TextStyle,
+      FontSize,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Image,
+      ResizableImage,
       Placeholder.configure({ placeholder: 'Start writing document content...' }),
     ],
     content: document.content ?? '',
@@ -379,11 +561,19 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
         </Badge>
 
         {saveStatus === 'saving' && (
-          <span className="text-xs text-muted-foreground ml-auto">Saving...</span>
+          <span className="text-xs text-muted-foreground ml-auto mr-3">Saving...</span>
         )}
         {saveStatus === 'saved' && (
-          <span className="text-xs text-emerald-600 ml-auto">Saved</span>
+          <span className="text-xs text-emerald-600 ml-auto mr-3">Saved</span>
         )}
+        {saveStatus === 'idle' && <div className="ml-auto" />}
+
+        {/* Logo — right side of header */}
+        <LogoUpload
+          logoUrl={logoUrl}
+          onLogoChange={handleLogoChange}
+          disabled={isReadOnly}
+        />
       </div>
 
       {/* Toolbar */}
@@ -393,9 +583,14 @@ export function DocumentPanel({ document, opportunityId, onUpdate }: DocumentPan
       <div className="flex-1 overflow-auto px-4 pb-4">
         <EditorContent
           editor={editor}
-          className="prose prose-sm max-w-none h-full [&_.tiptap]:outline-none [&_.tiptap]:p-4 [&_.tiptap]:min-h-full [&_.tiptap_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.tiptap_p.is-editor-empty:first-child::before]:float-left [&_.tiptap_p.is-editor-empty:first-child::before]:h-0 [&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none"
+          className="h-full [&_.tiptap]:p-4 [&_.tiptap]:min-h-full"
         />
       </div>
     </div>
   )
+}
+
+/** Expose the logo URL getter for download functions */
+export function getDocumentLogoUrl(documentId: string): string | null {
+  return localStorage.getItem(`doc-logo-${documentId}`)
 }

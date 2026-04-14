@@ -78,6 +78,8 @@ interface DealsState {
   fetchWorkspace: (opportunityId: string) => Promise<void>
   addWorkspaceDocument: (doc: Document) => void
   updateWorkspaceDocument: (doc: Document) => void
+  uploadSourceFile: (opportunityId: string, file: File) => Promise<void>
+  uploadingFile: boolean
   openTab: (tab: WorkspaceTab) => void
   closeTab: (tabId: string) => void
   toggleSidebar: () => void
@@ -221,6 +223,7 @@ export const useDealsStore = create<DealsState>((set, get) => ({
   activeTabId: null,
   sidebarCollapsed: false,
   loadingWorkspace: false,
+  uploadingFile: false,
 
   fetchWorkspace: async (opportunityId: string) => {
     set({ loadingWorkspace: true })
@@ -270,6 +273,17 @@ export const useDealsStore = create<DealsState>((set, get) => ({
     set({
       workspaceDocuments: state.workspaceDocuments.map((d) => d.id === doc.id ? doc : d),
     })
+  },
+
+  uploadSourceFile: async (opportunityId: string, file: File) => {
+    set({ uploadingFile: true })
+    try {
+      const uploaded = await dealsApi.uploadSourceFile(opportunityId, file)
+      const state = get()
+      set({ workspaceSourceFiles: [...state.workspaceSourceFiles, uploaded] })
+    } finally {
+      set({ uploadingFile: false })
+    }
   },
 
   openTab: (tab: WorkspaceTab) => {

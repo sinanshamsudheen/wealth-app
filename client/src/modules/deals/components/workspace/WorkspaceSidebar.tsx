@@ -1,13 +1,8 @@
-import { FileText, StickyNote, Paperclip, Plus, Check, PanelLeftClose, PanelLeft, Upload, FolderOpen, Database } from 'lucide-react'
+import { useRef } from 'react'
+import { FileText, StickyNote, Paperclip, Plus, Check, PanelLeftClose, PanelLeft, Upload, Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import type { Document, SourceFile, WorkspaceTab } from '../../types'
 
@@ -18,6 +13,8 @@ interface WorkspaceSidebarProps {
   activeTabId: string | null
   onOpenTab: (tab: WorkspaceTab) => void
   onCreateDocument: () => void
+  onUploadFile: (file: File) => void
+  uploadingFile: boolean
   onToggle: () => void
 }
 
@@ -34,8 +31,11 @@ export function WorkspaceSidebar({
   activeTabId,
   onOpenTab,
   onCreateDocument,
+  onUploadFile,
+  uploadingFile,
   onToggle,
 }: WorkspaceSidebarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const deliverables = documents.filter(d => d.documentType !== 'note')
 
   if (collapsed) {
@@ -125,7 +125,38 @@ export function WorkspaceSidebar({
         </div>
 
         {/* Source Documents */}
-        <SourceDocumentsHeader count={sourceFiles.length} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.png,.jpg,.jpeg,.gif"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) {
+              onUploadFile(file)
+              e.target.value = ''
+            }
+          }}
+        />
+        <div className="flex items-center justify-between px-2 py-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Source Documents ({sourceFiles.length})
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingFile}
+            title="Upload from computer"
+          >
+            {uploadingFile ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Upload className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
         <ul className="mb-4 space-y-0.5">
           {sourceFiles.map(sf => (
             <SidebarItem
@@ -180,33 +211,6 @@ function SectionHeader({
   )
 }
 
-function SourceDocumentsHeader({ count }: { count: number }) {
-  return (
-    <div className="flex items-center justify-between px-2 py-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Source Documents ({count})
-      </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className="inline-flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => console.log('upload')}>
-            <Upload className="h-4 w-4 mr-2" /> Upload from computer
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('drive')}>
-            <FolderOpen className="h-4 w-4 mr-2" /> Add from Drive
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log('database')}>
-            <Database className="h-4 w-4 mr-2" /> Add from app database
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
 
 function SidebarItem({
   active,
