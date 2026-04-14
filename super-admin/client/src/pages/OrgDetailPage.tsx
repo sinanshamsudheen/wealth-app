@@ -14,6 +14,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { AddUserDialog } from '@/components/users/AddUserDialog';
 import { ArrowLeft, Ban, RotateCcw } from 'lucide-react';
 import type { ModuleSlug } from '@/api/types';
 
@@ -77,9 +78,10 @@ export function OrgDetailPage() {
   }
 
   async function handleModuleToggle(module: ModuleSlug, enabled: boolean) {
-    if (!id) return;
+    if (!id || module === 'admin') return;
     const current = currentOrg!.enabledModules;
-    const updated = enabled ? [...current, module] : current.filter((m) => m !== module);
+    let updated = enabled ? [...current, module] : current.filter((m) => m !== module);
+    if (!updated.includes('admin')) updated = [...updated, 'admin'];
     await updateOrgModules(id, updated);
   }
 
@@ -136,7 +138,10 @@ export function OrgDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Users ({currentOrgUsers.length})</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Users ({currentOrgUsers.length})</CardTitle>
+          <AddUserDialog orgId={id} onCreated={() => { if (id) { fetchOrgUsers(id); fetchOrganization(id); } }} />
+        </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>

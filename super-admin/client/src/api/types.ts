@@ -79,6 +79,14 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+export interface CreateUserPayload {
+  tenantId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  moduleRoles?: { module: ModuleSlug; role: string }[];
+}
+
 export interface LoginResponse {
   token: string;
   user: SuperAdminUser;

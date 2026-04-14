@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
 import { UserTable } from '@/components/users/UserTable';
+import { AddUserDialog } from '@/components/users/AddUserDialog';
 import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -42,7 +43,10 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Users</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Users</h1>
+        <AddUserDialog onCreated={fetchUsers} />
+      </div>
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

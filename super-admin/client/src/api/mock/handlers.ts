@@ -4,6 +4,7 @@ import type {
   PlatformUser,
   AuditLogEntry,
   CreateOrgPayload,
+  CreateUserPayload,
   UpdateOrgPayload,
   ModuleSlug,
   LoginResponse,
@@ -99,6 +100,15 @@ function newOrgId(): string {
     .filter(Number.isFinite);
   const max = existing.length > 0 ? Math.max(...existing) : 0;
   return `org-${String(max + 1).padStart(3, '0')}`;
+}
+
+function newUserId(): string {
+  const existing = Array.from(users.keys())
+    .filter((k) => k.startsWith('user-'))
+    .map((k) => parseInt(k.replace('user-', ''), 10))
+    .filter(Number.isFinite);
+  const max = existing.length > 0 ? Math.max(...existing) : 0;
+  return `user-${String(max + 1).padStart(3, '0')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -364,6 +374,36 @@ export const handlers = [
   // =========================================================================
   // USERS
   // =========================================================================
+
+  // POST /users — create a new user under an organization
+  http.post('/api/v1/superadmin/users', async ({ request }) => {
+    const body = (await request.json()) as CreateUserPayload;
+    const org = orgs.get(body.tenantId);
+    if (!org) {
+      return HttpResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+    const id = newUserId();
+    const now = new Date().toISOString();
+    const user: PlatformUser = {
+      id,
+      tenantId: body.tenantId,
+      organizationName: org.name,
+      email: body.email,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      status: 'invited',
+      moduleRoles: body.moduleRoles ?? [],
+      lastLoginAt: null,
+      createdAt: now,
+    };
+    users.set(id, user);
+    orgs.set(org.id, { ...org, userCount: org.userCount + 1 });
+    addAuditLog('user.created', 'user', id, body.email, {
+      organization: org.name,
+      tenantId: body.tenantId,
+    });
+    return HttpResponse.json(user, { status: 201 });
+  }),
 
   // GET /users — list (paginated, filterable, searchable)
   http.get('/api/v1/superadmin/users', ({ request }) => {

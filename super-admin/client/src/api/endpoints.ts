@@ -17,6 +17,7 @@ export const ENDPOINTS = {
   },
   users: {
     list: '/api/v1/superadmin/users',
+    create: '/api/v1/superadmin/users',
     detail: (id: string) => `/api/v1/superadmin/users/${id}`,
     status: (id: string) => `/api/v1/superadmin/users/${id}/status`,
     moduleRoles: (id: string) => `/api/v1/superadmin/users/${id}/module-roles`,
