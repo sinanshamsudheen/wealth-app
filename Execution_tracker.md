@@ -38,10 +38,10 @@
 - [x] Matched opportunities: `GET /deals/mandates/:id/matches`
 - [x] Expand mock data in `deals.ts` (events, tasks, notifications, calendar accounts)
 
-### Phase 3 — Settings Updates
-- [ ] `SnapshotFieldEditor`: remove `required` toggle, add `description` text input
-- [ ] `TemplateList`: add Create / Edit / Delete template actions
-- [ ] Settings page: add Google Calendar integration card (connect / disconnect)
+### ~~Phase 3 — Settings Updates~~ ✅ DONE
+- [x] `SnapshotFieldEditor`: remove `required` toggle, add `description` text input
+- [x] `TemplateList`: add Create / Edit / Delete template actions
+- [x] Settings page: add Google Calendar integration card (connect / disconnect)
 
 ### Phase 4 — Dashboard Enhancements
 - [ ] Flexible date range filter (7d / 30d / 90d / custom)
