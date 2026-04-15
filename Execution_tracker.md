@@ -54,10 +54,10 @@
 - [x] `ProcessingStatusBadge` (spinner when `status === 'processing'`)
 - [x] "Top Matches" section on opportunity list page
 
-### Phase 6 — Mandate Matched Opportunities Tab
-- [ ] Add "Matched Opportunities" tab to `MandateDetailPage`
-- [ ] Fetch from `GET /deals/mandates/:id/matches`
-- [ ] Ranked list with fit score + pipeline status
+### ~~Phase 6 — Mandate Matched Opportunities Tab~~ ✅ DONE
+- [x] Add "Matched Opportunities" tab to `MandateDetailPage`
+- [x] Fetch from `GET /deals/mandates/:id/matches`
+- [x] Ranked list with fit score + pipeline status
 
 ### Phase 7 — Email Hub Fixes
 - [ ] Error toast on Gmail connect failure / processing error
