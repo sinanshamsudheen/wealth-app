@@ -48,11 +48,11 @@
 - [x] Team activity section (Manager + Owner only)
 - [x] Pipeline funnel grouped by stage
 
-### Phase 5 — Opportunities & Pipeline Enhancements
-- [ ] Pipeline Stage column in `OpportunityTable`
-- [ ] Strategy fit tooltip with rationale text
-- [ ] `ProcessingStatusBadge` (spinner when `status === 'processing'`)
-- [ ] "Top Matches" section on opportunity list page
+### ~~Phase 5 — Opportunities & Pipeline Enhancements~~ ✅ DONE
+- [x] Pipeline Stage column in `OpportunityTable`
+- [x] Strategy fit tooltip with rationale text
+- [x] `ProcessingStatusBadge` (spinner when `status === 'processing'`)
+- [x] "Top Matches" section on opportunity list page
 
 ### Phase 6 — Mandate Matched Opportunities Tab
 - [ ] Add "Matched Opportunities" tab to `MandateDetailPage`
