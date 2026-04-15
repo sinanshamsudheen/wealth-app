@@ -41,21 +41,28 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
   const [dismissedSelection, setDismissedSelection] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Latch: remember the last non-empty selection so it survives focus changes
+  const latchedSelectionRef = useRef<string>('')
 
-  // Reset dismissed state when selection changes
-  const prevSelectionRef = useRef(selectedText)
   useEffect(() => {
-    if (selectedText !== prevSelectionRef.current) {
-      prevSelectionRef.current = selectedText
-      setDismissedSelection(false)
+    if (selectedText) {
+      // A real selection just arrived — latch it and un-dismiss
+      if (selectedText !== latchedSelectionRef.current) {
+        latchedSelectionRef.current = selectedText
+        setDismissedSelection(false)
+      }
     }
+    // When selectedText goes empty (focus moved away), keep showing the latched value
   }, [selectedText])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, loading])
 
-  const activeSelection = !dismissedSelection && selectedText ? selectedText : null
+  // Use the latched value so selection survives clicking into the input box
+  const activeSelection = !dismissedSelection && latchedSelectionRef.current
+    ? latchedSelectionRef.current
+    : null
 
   function handleSend(overridePrompt?: string) {
     const text = (overridePrompt ?? input).trim()
@@ -69,6 +76,9 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
     }
     setMessages((prev) => [...prev, userMsg])
     setInput('')
+    // Clear the latched selection after it's been used in a message
+    latchedSelectionRef.current = ''
+    setDismissedSelection(true)
     setLoading(true)
 
     setTimeout(() => {
@@ -167,7 +177,7 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
           </span>
           <button
             type="button"
-            onClick={() => setDismissedSelection(true)}
+            onClick={() => { latchedSelectionRef.current = ''; setDismissedSelection(true) }}
             className="text-muted-foreground hover:text-foreground shrink-0 ml-1"
           >
             <X className="size-3" />
