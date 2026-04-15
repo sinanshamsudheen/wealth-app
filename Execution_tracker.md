@@ -25,18 +25,18 @@
 - [x] Add types: `DealEvent`, `DealTask`, `DealNotification`, `GoogleCalendarAccount`, `DocumentComment`
 - [x] Add API method signatures in `api.ts` for events, tasks, notifications, comments, export
 
-### Phase 2 — MSW Mock Handlers (~35 new endpoints, blocks Phases 3–12 testing)
-- [ ] Events CRUD: `GET/POST /deals/events`, `PATCH/DELETE /deals/events/:id`
-- [ ] Tasks CRUD: `GET/POST /deals/tasks`, `PATCH/DELETE /deals/tasks/:id`
-- [ ] Notifications: `GET /deals/notifications`, `PATCH /deals/notifications/:id/read`
-- [ ] Calendar: `GET/POST/DELETE /deals/integrations/google-calendar`
-- [ ] Comments: `GET/POST /deals/opportunities/:id/comments`
-- [ ] Export: `POST /deals/opportunities/:id/export`
-- [ ] Template CRUD: `POST/PATCH/DELETE /deals/settings/templates/:id`
-- [ ] Unignore email: `POST /deals/emails/:id/unignore`
-- [ ] Team activity: `GET /deals/dashboard/team-activity`
-- [ ] Matched opportunities: `GET /deals/mandates/:id/matches`
-- [ ] Expand mock data in `deals.ts` (events, tasks, notifications, calendar accounts)
+### ~~Phase 2 — MSW Mock Handlers~~ ✅ DONE
+- [x] Events CRUD: `GET/POST /deals/events`, `PATCH/DELETE /deals/events/:id`
+- [x] Tasks CRUD: `GET/POST /deals/tasks`, `PATCH/DELETE /deals/tasks/:id`
+- [x] Notifications: `GET /deals/notifications`, `PATCH /deals/notifications/:id/read`
+- [x] Calendar: `GET/POST/DELETE /deals/integrations/google-calendar`
+- [x] Comments: `GET/POST /deals/opportunities/:id/comments`
+- [x] Export: `POST /deals/opportunities/:id/export`
+- [x] Template CRUD: `POST/PATCH/DELETE /deals/settings/templates/:id`
+- [x] Unignore email: `POST /deals/emails/:id/unignore`
+- [x] Team activity: `GET /deals/dashboard/team-activity`
+- [x] Matched opportunities: `GET /deals/mandates/:id/matches`
+- [x] Expand mock data in `deals.ts` (events, tasks, notifications, calendar accounts)
 
 ### Phase 3 — Settings Updates
 - [ ] `SnapshotFieldEditor`: remove `required` toggle, add `description` text input
