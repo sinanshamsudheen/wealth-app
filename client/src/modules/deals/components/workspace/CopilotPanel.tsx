@@ -8,15 +8,12 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  /** If the user sent a selection context alongside the message */
   context?: string
 }
 
 interface CopilotPanelProps {
   opportunityName: string
-  /** Text currently selected in the editor — passed in from the workspace */
   selectedText?: string
-  /** Called in agent mode when the assistant wants to replace the selected text */
   onApplyText?: (text: string) => void
 }
 
@@ -27,7 +24,7 @@ const QUICK_ACTIONS = [
   { label: 'Improve', prompt: 'Improve the clarity and professionalism of this text.' },
 ]
 
-export function CopilotPanel({ opportunityName, selectedText, onApplyText }: CopilotPanelProps) {
+export function CopilotPanel({ opportunityName, onApplyText }: CopilotPanelProps) {
   const [mode, setMode] = useState<'chat' | 'agent'>('chat')
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -38,54 +35,52 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [dismissedSelection, setDismissedSelection] = useState(false)
+  // Latched selection — captured at mousedown on this panel, before browser clears it
+  const [latchedSelection, setLatchedSelection] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  // Latch: remember the last non-empty selection so it survives focus changes
-  const latchedSelectionRef = useRef<string>('')
-
-  useEffect(() => {
-    if (selectedText) {
-      // A real selection just arrived — latch it and un-dismiss
-      if (selectedText !== latchedSelectionRef.current) {
-        latchedSelectionRef.current = selectedText
-        setDismissedSelection(false)
-      }
-    }
-    // When selectedText goes empty (focus moved away), keep showing the latched value
-  }, [selectedText])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, loading])
 
-  // Use the latched value so selection survives clicking into the input box
-  const activeSelection = !dismissedSelection && latchedSelectionRef.current
-    ? latchedSelectionRef.current
-    : null
+  /**
+   * Called on mousedown of the entire panel container.
+   * At this point the DOM selection is still alive — snapshot it before
+   * the browser clears it when focus moves to our input.
+   */
+  function handlePanelMouseDown() {
+    const text = window.getSelection()?.toString().trim() ?? ''
+    if (text) {
+      setLatchedSelection(text)
+    }
+  }
+
+  function clearSelection() {
+    setLatchedSelection('')
+  }
 
   function handleSend(overridePrompt?: string) {
     const text = (overridePrompt ?? input).trim()
     if (!text || loading) return
 
+    const context = latchedSelection || undefined
     const userMsg: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
       content: text,
-      context: activeSelection ?? undefined,
+      context,
     }
     setMessages((prev) => [...prev, userMsg])
     setInput('')
-    // Clear the latched selection after it's been used in a message
-    latchedSelectionRef.current = ''
-    setDismissedSelection(true)
+    clearSelection()
     setLoading(true)
 
     setTimeout(() => {
       const reply: Message = {
         id: `msg-${Date.now()}-reply`,
         role: 'assistant',
-        content: generateMockReply(text, activeSelection, mode),
+        content: generateMockReply(text, context ?? null, mode),
       }
       setMessages((prev) => [...prev, reply])
       setLoading(false)
@@ -100,7 +95,10 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
   }
 
   return (
-    <div className="flex flex-col h-full border-l bg-background">
+    <div
+      className="flex flex-col h-full border-l bg-background"
+      onMouseDown={handlePanelMouseDown}
+    >
       {/* Header */}
       <div className="flex items-center gap-2 border-b px-3 py-2.5 shrink-0">
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
@@ -136,7 +134,6 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
               )}>
                 {msg.content}
               </div>
-              {/* Apply button — only for assistant in agent mode when last message */}
               {msg.role === 'assistant' && mode === 'agent' && onApplyText &&
                 msg.id === messages[messages.length - 1]?.id && !loading && (
                 <button
@@ -169,15 +166,16 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
       </div>
 
       {/* Selected text context pill */}
-      {activeSelection && (
+      {latchedSelection && (
         <div className="mx-3 mb-1 flex items-start gap-1.5 rounded-md border bg-amber-500/5 border-amber-500/20 px-2.5 py-2">
           <FileText className="size-3.5 text-amber-600 shrink-0 mt-0.5" />
           <span className="flex-1 text-[11px] text-muted-foreground leading-relaxed line-clamp-3">
-            {activeSelection}
+            {latchedSelection}
           </span>
           <button
             type="button"
-            onClick={() => { latchedSelectionRef.current = ''; setDismissedSelection(true) }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={clearSelection}
             className="text-muted-foreground hover:text-foreground shrink-0 ml-1"
           >
             <X className="size-3" />
@@ -185,13 +183,14 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
         </div>
       )}
 
-      {/* Quick action chips — only when there's a selection */}
-      {activeSelection && !loading && (
+      {/* Quick action chips */}
+      {latchedSelection && !loading && (
         <div className="flex flex-wrap gap-1.5 px-3 pb-2">
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.label}
               type="button"
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={() => handleSend(action.prompt)}
               className="rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[11px] font-medium hover:bg-muted transition-colors"
             >
@@ -210,8 +209,8 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={
-              activeSelection
-                ? 'Ask about the selection, or type a custom instruction...'
+              latchedSelection
+                ? 'Ask about the selection, or pick an action above...'
                 : mode === 'agent'
                 ? 'Give the agent a task...'
                 : 'Ask about this opportunity...'
@@ -225,16 +224,18 @@ export function CopilotPanel({ opportunityName, selectedText, onApplyText }: Cop
             size="icon"
             className="size-9 shrink-0 mb-0.5"
             disabled={!input.trim() || loading}
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={() => handleSend()}
           >
             <Send className="size-4" />
           </Button>
         </div>
 
-        {/* Mode toggle — sits below the textarea, left-aligned */}
+        {/* Mode toggle */}
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={() => setMode(mode === 'chat' ? 'agent' : 'chat')}
             className={cn(
               'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium border transition-colors',
@@ -262,13 +263,13 @@ function generateMockReply(query: string, context: string | null, mode: 'chat' |
 
   if (context) {
     if (lower.includes('summar'))
-      return `Here's a summary of the selected text:\n\n"${context.slice(0, 80)}${context.length > 80 ? '...' : ''}"\n\nThis passage covers the core investment thesis and key risk factors. The GP highlights strong sector tailwinds and a proprietary deal sourcing advantage.`
+      return `Here's a summary:\n\n"${context.slice(0, 80)}${context.length > 80 ? '...' : ''}"\n\nThis passage covers the core investment thesis and key risk factors. The GP highlights strong sector tailwinds and a proprietary deal sourcing advantage.`
     if (lower.includes('shorten'))
-      return `Shortened version:\n\n${context.split(' ').slice(0, Math.max(8, Math.floor(context.split(' ').length * 0.4))).join(' ')}...`
+      return context.split(' ').slice(0, Math.max(8, Math.floor(context.split(' ').length * 0.4))).join(' ') + '...'
     if (lower.includes('expand'))
-      return `Expanded version:\n\n${context}\n\nFurthermore, this aligns with broader market trends in the sector, supported by recent macroeconomic data indicating strong demand tailwinds and a favorable regulatory environment for new entrants.`
+      return `${context}\n\nFurthermore, this aligns with broader market trends in the sector, supported by recent macroeconomic data indicating strong demand tailwinds and a favorable regulatory environment for new entrants.`
     if (lower.includes('improve'))
-      return `Improved version:\n\n${context.charAt(0).toUpperCase() + context.slice(1).replace(/\s+/g, ' ').trim()} This positions the fund favorably relative to peers in terms of both return potential and downside protection.`
+      return `${context.charAt(0).toUpperCase() + context.slice(1).replace(/\s+/g, ' ').trim()} This positions the fund favorably relative to peers in terms of both return potential and downside protection.`
     return `Based on the selected text, here is my analysis: the content appears to be ${context.length > 100 ? 'a detailed section' : 'a brief note'} covering key investment considerations. ${mode === 'agent' ? 'I can apply a revised version directly to the document.' : 'Let me know if you want me to rewrite or expand on any part.'}`
   }
 

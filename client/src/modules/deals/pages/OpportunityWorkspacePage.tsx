@@ -32,7 +32,6 @@ export function OpportunityWorkspacePage() {
   const [showValidation, setShowValidation] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [rightPanel, setRightPanel] = useState<'none' | 'copilot' | 'comments'>('none')
-  const [editorSelection, setEditorSelection] = useState('')
 
   useEffect(() => {
     if (oppId) {
@@ -51,17 +50,6 @@ export function OpportunityWorkspacePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oppId])
-
-  // Track text selection in the editor area for Copilot context
-  useEffect(() => {
-    function handleSelectionChange() {
-      const sel = window.getSelection()
-      const text = sel?.toString().trim() ?? ''
-      setEditorSelection(text)
-    }
-    document.addEventListener('selectionchange', handleSelectionChange)
-    return () => document.removeEventListener('selectionchange', handleSelectionChange)
-  }, [])
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -255,7 +243,6 @@ export function OpportunityWorkspacePage() {
           <div className="w-80 shrink-0">
             <CopilotPanel
               opportunityName={opp.name}
-              selectedText={editorSelection || undefined}
               onApplyText={(text) => {
                 const sel = window.getSelection()
                 if (!sel || sel.rangeCount === 0) return
@@ -263,7 +250,6 @@ export function OpportunityWorkspacePage() {
                 range.deleteContents()
                 range.insertNode(document.createTextNode(text))
                 sel.removeAllRanges()
-                setEditorSelection('')
               }}
             />
           </div>
