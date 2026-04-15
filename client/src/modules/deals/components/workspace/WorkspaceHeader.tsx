@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   ArrowLeft,
   Bell,
@@ -7,6 +8,7 @@ import {
   ClipboardCheck,
   Download,
   FileCheck,
+  Loader2,
   Redo2,
   Search,
   Share2,
@@ -108,6 +110,23 @@ export function WorkspaceHeader({
   onStageChange,
 }: WorkspaceHeaderProps) {
   const hasDoc = activeDocument !== null
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  async function handleDownloadPDF() {
+    if (!activeDocument) return
+    setIsDownloading(true)
+    try { await downloadAsPDF(activeDocument, opportunity.name) }
+    catch (e) { console.error('PDF export failed', e) }
+    finally { setIsDownloading(false) }
+  }
+
+  async function handleDownloadDocx() {
+    if (!activeDocument) return
+    setIsDownloading(true)
+    try { await downloadAsDocx(activeDocument, opportunity.name) }
+    catch (e) { console.error('DOCX export failed', e) }
+    finally { setIsDownloading(false) }
+  }
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b shrink-0 bg-background">
@@ -275,36 +294,24 @@ export function WorkspaceHeader({
         </Tooltip>
 
         <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <DropdownMenuTrigger
-                  className={cn(
-                    'inline-flex items-center justify-center rounded-md h-8 w-8 transition-colors',
-                    hasDoc
-                      ? 'hover:bg-accent hover:text-accent-foreground cursor-pointer text-foreground'
-                      : 'opacity-50 pointer-events-none text-muted-foreground',
-                  )}
-                >
-                  <Download className="h-4 w-4" />
-                </DropdownMenuTrigger>
-              }
-            />
-            <TooltipContent>Download</TooltipContent>
-          </Tooltip>
+          <DropdownMenuTrigger
+            title="Download"
+            className={cn(
+              'inline-flex items-center justify-center rounded-md h-8 w-8 transition-colors',
+              hasDoc && !isDownloading
+                ? 'hover:bg-accent hover:text-accent-foreground cursor-pointer text-foreground'
+                : 'opacity-50 pointer-events-none text-muted-foreground',
+            )}
+          >
+            {isDownloading
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Download className="h-4 w-4" />}
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => {
-                if (activeDocument) downloadAsPDF(activeDocument, opportunity.name)
-              }}
-            >
+            <DropdownMenuItem onClick={handleDownloadPDF}>
               Download as PDF
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                if (activeDocument) downloadAsDocx(activeDocument, opportunity.name)
-              }}
-            >
+            <DropdownMenuItem onClick={handleDownloadDocx}>
               Download as Word (.docx)
             </DropdownMenuItem>
           </DropdownMenuContent>
