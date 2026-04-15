@@ -43,10 +43,10 @@
 - [x] `TemplateList`: add Create / Edit / Delete template actions
 - [x] Settings page: add Google Calendar integration card (connect / disconnect)
 
-### Phase 4 — Dashboard Enhancements
-- [ ] Flexible date range filter (7d / 30d / 90d / custom)
-- [ ] Team activity section (Manager + Owner only)
-- [ ] Pipeline funnel grouped by stage
+### ~~Phase 4 — Dashboard Enhancements~~ ✅ DONE
+- [x] Flexible date range filter (7d / 30d / 90d / custom)
+- [x] Team activity section (Manager + Owner only)
+- [x] Pipeline funnel grouped by stage
 
 ### Phase 5 — Opportunities & Pipeline Enhancements
 - [ ] Pipeline Stage column in `OpportunityTable`
