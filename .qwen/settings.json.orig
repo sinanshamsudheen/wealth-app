@@ -3,6 +3,5 @@
     "allow": [
       "Bash(pnpm install)"
     ]
-  },
-  "$version": 3
+  }
 }
