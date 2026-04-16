@@ -58,8 +58,12 @@ export function WorkspaceSidebar({
             )}
           </button>
           <button
-            className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground/50 cursor-default"
-            title="Notes — Coming soon"
+            className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            title="Notes"
+            onClick={() => {
+              onToggle()
+              onOpenTab({ id: 'notes-canvas', type: 'note', label: 'Notes', closeable: true })
+            }}
           >
             <StickyNote className="h-4 w-4" />
           </button>
@@ -116,12 +120,27 @@ export function WorkspaceSidebar({
           ))}
         </ul>
 
-        {/* Notes — Coming Soon */}
+        {/* Notes */}
         <div className="flex items-center justify-between px-2 py-1.5">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Notes
           </span>
-          <span className="text-[10px] text-muted-foreground italic">Coming soon</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            title="Open notes canvas"
+            onClick={() =>
+              onOpenTab({
+                id: 'notes-canvas',
+                type: 'note',
+                label: 'Notes',
+                closeable: true,
+              })
+            }
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
         </div>
 
         {/* Source Documents */}
