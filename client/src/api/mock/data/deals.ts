@@ -660,6 +660,21 @@ export const MOCK_DOCUMENTS: WorkspaceDocument[] = [
     createdAt: '2026-03-10T10:00:00Z',
     updatedAt: '2026-03-25T16:00:00Z',
   },
+  {
+    id: 'doc-canvas-1',
+    opportunityId: 'opp-abingworth-viii',
+    templateId: null as unknown as string,
+    templateName: 'Canvas',
+    name: 'Deal Flow Diagram',
+    title: 'Deal Flow Diagram',
+    documentType: 'note',
+    content: null,
+    version: 1,
+    status: 'draft',
+    createdBy: 'user-pine',
+    createdAt: '2026-04-01T10:00:00Z',
+    updatedAt: '2026-04-01T10:00:00Z',
+  },
 ]
 
 // ── Reviews ───────────────────────────────────────────────────────────

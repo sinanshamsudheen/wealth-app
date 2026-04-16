@@ -39,6 +39,7 @@ import type { ApprovalStage, Opportunity, Document } from '../../types'
 interface WorkspaceHeaderProps {
   opportunity: Opportunity
   activeDocument: Document | null
+  activeTabType?: string
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
@@ -47,6 +48,7 @@ interface WorkspaceHeaderProps {
   onValidate: () => void
   onShare: () => void
   onStageChange: (stage: ApprovalStage) => void
+  onExportCanvas?: () => void
 }
 
 const stageColors: Record<string, string> = {
@@ -100,6 +102,7 @@ function capitalize(value: string): string {
 export function WorkspaceHeader({
   opportunity,
   activeDocument,
+  activeTabType,
   canUndo,
   canRedo,
   onUndo,
@@ -108,8 +111,10 @@ export function WorkspaceHeader({
   onValidate,
   onShare,
   onStageChange,
+  onExportCanvas,
 }: WorkspaceHeaderProps) {
-  const hasDoc = activeDocument !== null
+  const isCanvas = activeTabType === 'note'
+  const hasDoc = activeDocument !== null || isCanvas
   const [isDownloading, setIsDownloading] = useState(false)
 
   async function handleDownloadPDF() {
@@ -293,29 +298,41 @@ export function WorkspaceHeader({
           <TooltipContent>Share</TooltipContent>
         </Tooltip>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            title="Download"
-            className={cn(
-              'inline-flex items-center justify-center rounded-md h-8 w-8 transition-colors',
-              hasDoc && !isDownloading
-                ? 'hover:bg-accent hover:text-accent-foreground cursor-pointer text-foreground'
-                : 'opacity-50 pointer-events-none text-muted-foreground',
-            )}
+        {isCanvas ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Export as PNG"
+            onClick={onExportCanvas}
           >
-            {isDownloading
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <Download className="h-4 w-4" />}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleDownloadPDF}>
-              Download as PDF
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDownloadDocx}>
-              Download as Word (.docx)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Download className="h-4 w-4" />
+          </Button>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              title="Download"
+              className={cn(
+                'inline-flex items-center justify-center rounded-md h-8 w-8 transition-colors',
+                hasDoc && !isDownloading
+                  ? 'hover:bg-accent hover:text-accent-foreground cursor-pointer text-foreground'
+                  : 'opacity-50 pointer-events-none text-muted-foreground',
+              )}
+            >
+              {isDownloading
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Download className="h-4 w-4" />}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleDownloadPDF}>
+                Download as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadDocx}>
+                Download as Word (.docx)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <Tooltip>
           <TooltipTrigger

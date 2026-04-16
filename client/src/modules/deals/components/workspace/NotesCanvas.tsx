@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   MousePointer2, Pencil, Minus, ArrowRight, Square, StickyNote, Type,
   Trash2, ZoomIn, ZoomOut, Maximize2, Undo2, Redo2,
@@ -88,11 +88,48 @@ interface Viewport { x: number; y: number; zoom: number }
 
 // ── Main Component ───────────────────────────────────────────────────
 
-export function NotesCanvas() {
-  const [shapes, setShapes] = useState<Shape[]>([
-    { id: uid(), type: 'note', x: 60, y: 60, text: 'Key takeaways from LP meeting', color: NOTE_COLORS[0] },
-    { id: uid(), type: 'note', x: 280, y: 100, text: 'Follow up on fee structure', color: NOTE_COLORS[2] },
-  ])
+interface NotesCanvasProps {
+  documentId?: string
+  exportRef?: React.MutableRefObject<(() => void) | null>
+}
+
+const SEED_SHAPES: Record<string, Shape[]> = {
+  'doc-canvas-1': [
+    { id: 'c1-n1', type: 'note', x: 60,  y: 60,  text: 'GP track record: 50+ yrs\n2x DPI on Fund VI', color: NOTE_COLORS[0] },
+    { id: 'c1-n2', type: 'note', x: 280, y: 60,  text: 'Portfolio: 12 active\n3 upcoming exits',    color: NOTE_COLORS[2] },
+    { id: 'c1-n3', type: 'note', x: 500, y: 60,  text: 'Strategy fit: ✓ Strong\nHealthcare mandate', color: NOTE_COLORS[4] },
+    { id: 'c1-a1', type: 'arrow', x1: 220, y1: 100, x2: 278, y2: 100, color: '#1e293b', width: 1.5 },
+    { id: 'c1-a2', type: 'arrow', x1: 440, y1: 100, x2: 498, y2: 100, color: '#1e293b', width: 1.5 },
+    { id: 'c1-t1', type: 'text', x: 60,  y: 240, text: 'Deal Flow Diagram — Abingworth VIII', color: '#64748b' },
+    { id: 'c1-r1', type: 'rect', x: 50,  y: 260, w: 620, h: 120, color: '#3b82f6', fill: 'rgba(59,130,246,0.05)' },
+    { id: 'c1-n4', type: 'note', x: 70,  y: 275, text: 'Sourcing\nLP referral via Usman', color: NOTE_COLORS[5] },
+    { id: 'c1-n5', type: 'note', x: 250, y: 275, text: 'Screening\nPassed — Mar 2026',   color: NOTE_COLORS[1] },
+    { id: 'c1-n6', type: 'note', x: 430, y: 275, text: 'IC Review\nMeeting Apr 22',      color: NOTE_COLORS[3] },
+  ],
+  'doc-canvas-2': [
+    { id: 'c2-t1', type: 'text', x: 60,  y: 50,  text: 'IC Prep — Key Questions', color: '#1e293b' },
+    { id: 'c2-n1', type: 'note', x: 60,  y: 80,  text: 'Q: Concentration risk in biotech downturn?', color: NOTE_COLORS[3] },
+    { id: 'c2-n2', type: 'note', x: 260, y: 80,  text: 'Q: Key-person dependency on CEO?',          color: NOTE_COLORS[3] },
+    { id: 'c2-n3', type: 'note', x: 460, y: 80,  text: 'Q: FX exposure — EUR vs USD?',              color: NOTE_COLORS[3] },
+    { id: 'c2-t2', type: 'text', x: 60,  y: 230, text: 'Supporting data points', color: '#1e293b' },
+    { id: 'c2-n4', type: 'note', x: 60,  y: 260, text: 'IRR target 18–22%\nHistoric median: 19.4%', color: NOTE_COLORS[1] },
+    { id: 'c2-n5', type: 'note', x: 260, y: 260, text: 'Fund size $450M\n↑ from $320M (Fund VII)',  color: NOTE_COLORS[2] },
+    { id: 'c2-l1', type: 'line', x1: 60, y1: 248, x2: 640, y2: 248, color: '#94a3b8', width: 1 },
+  ],
+}
+
+function loadShapes(documentId?: string): Shape[] {
+  if (!documentId) return []
+  try {
+    const raw = localStorage.getItem(`canvas-${documentId}`)
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  // Return per-canvas seed shapes on first load
+  return SEED_SHAPES[documentId] ?? []
+}
+
+export function NotesCanvas({ documentId, exportRef }: NotesCanvasProps) {
+  const [shapes, setShapes] = useState<Shape[]>(() => loadShapes(documentId))
   const [history, setHistory] = useState<Shape[][]>([])
   const [future, setFuture] = useState<Shape[][]>([])
 
@@ -112,11 +149,70 @@ export function NotesCanvas() {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const svgRef = useRef<SVGSVGElement>(null)
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle')
+
+  // Wire export function to ref so parent can trigger it
+  useEffect(() => {
+    if (!exportRef) return
+    exportRef.current = () => {
+      const svg = svgRef.current
+      if (!svg) return
+
+      const rect = svg.getBoundingClientRect()
+      const W = rect.width
+      const H = rect.height
+      const scale = 2
+
+      // Serialize SVG, strip Tailwind classes, resolve currentColor to a safe fallback
+      const clone = svg.cloneNode(true) as SVGSVGElement
+      clone.setAttribute('width', String(W))
+      clone.setAttribute('height', String(H))
+      clone.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'))
+      let svgStr = new XMLSerializer().serializeToString(clone)
+      // currentColor can't cross the canvas security boundary — replace with a neutral dark
+      svgStr = svgStr.replace(/currentColor/g, '#1e293b')
+
+      const img = new Image()
+      img.width = W
+      img.height = H
+      // Use a data URL instead of blob URL — avoids the tainted canvas restriction
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr)
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = W * scale
+        canvas.height = H * scale
+        const ctx = canvas.getContext('2d')!
+        ctx.scale(scale, scale)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, W, H)
+        ctx.drawImage(img, 0, 0, W, H)
+        const a = document.createElement('a')
+        a.download = `${documentId ?? 'canvas'}.png`
+        a.href = canvas.toDataURL('image/png')
+        a.click()
+      }
+    }
+  }, [exportRef, documentId])
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const scheduleAutoSave = useCallback((next: Shape[]) => {
+    if (!documentId) return
+    setSaveStatus('saving')
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(`canvas-${documentId}`, JSON.stringify(next))
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 1500)
+      } catch { setSaveStatus('idle') }
+    }, 1000)
+  }, [documentId])
 
   function commit(next: Shape[]) {
     setHistory(h => [...h.slice(-30), shapes])
     setFuture([])
     setShapes(next)
+    scheduleAutoSave(next)
   }
 
   function undo() {
@@ -552,6 +648,13 @@ export function NotesCanvas() {
         )}
 
         <div className="flex-1" />
+
+        {/* Save status */}
+        {documentId && saveStatus !== 'idle' && (
+          <span className={cn('text-[11px] mr-1', saveStatus === 'saved' ? 'text-emerald-600' : 'text-muted-foreground')}>
+            {saveStatus === 'saving' ? 'Saving...' : 'Saved'}
+          </span>
+        )}
 
         {/* Undo/Redo */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={undo} disabled={!history.length} title="Undo (⌘Z)">
